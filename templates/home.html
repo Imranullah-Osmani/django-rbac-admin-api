@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Django Internal Admin API</title>
+    <link rel="stylesheet" href="{% static 'styles/site.css' %}">
+</head>
+<body class="admin-body">
+    <div class="admin-shell">
+        <header class="hero-card">
+            <div>
+                <p class="eyebrow">Startup-ready internal tooling</p>
+                <h1>Django Internal Admin API</h1>
+                <p class="hero-copy">
+                    A browser-first control plane for JWT-secured user administration, role enforcement, org management,
+                    and auditability. Built to present like an internal platform delivery, not a tutorial artifact.
+                </p>
+            </div>
+            <div class="hero-actions">
+                <a class="button button-primary" href="/admin/">Open Admin Workspace</a>
+                <a class="button button-secondary" href="/api-auth/login/?next=/api/">Open Browser API Console</a>
+            </div>
+        </header>
+
+        <section class="status-grid">
+            <article class="status-card">
+                <span class="status-label">Service status</span>
+                <strong>{% if system_ready %}Ready{% else %}Waiting for migrations{% endif %}</strong>
+                <p>{% if system_ready %}Database-backed metrics are live.{% else %}Run migrations first to activate live counts.{% endif %}</p>
+            </article>
+            <article class="metric-card">
+                <span>Users</span>
+                <strong>{{ stats.users }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>Roles</span>
+                <strong>{{ stats.roles }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>Org Units</span>
+                <strong>{{ stats.org_units }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>Audit Logs</span>
+                <strong>{{ stats.audit_logs }}</strong>
+            </article>
+        </section>
+
+        <section class="content-grid">
+            <article class="panel panel-accent">
+                <div class="panel-header">
+                    <p class="eyebrow">Capability map</p>
+                    <h2>What clients see immediately</h2>
+                </div>
+                <ul class="feature-list">
+                    {% for capability in capabilities %}
+                    <li>{{ capability }}</li>
+                    {% endfor %}
+                </ul>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <p class="eyebrow">Recent activity</p>
+                    <h2>Audit timeline preview</h2>
+                </div>
+                {% if recent_logs %}
+                <div class="timeline">
+                    {% for log in recent_logs %}
+                    <div class="timeline-row">
+                        <div>
+                            <strong>{{ log.action|title }}</strong>
+                            <p>{{ log.target_model }}{% if log.target_repr %}: {{ log.target_repr }}{% endif %}</p>
+                        </div>
+                        <span>{% if log.actor %}{{ log.actor.email }}{% else %}system{% endif %}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="empty-state">No audit events yet. Create or import records to populate the operational timeline.</p>
+                {% endif %}
+            </article>
+        </section>
+
+        <section class="panel endpoint-panel">
+            <div class="panel-header">
+                <p class="eyebrow">API guide</p>
+                <h2>Browser-accessible endpoints</h2>
+            </div>
+            <div class="endpoint-list">
+                {% for endpoint in endpoints %}
+                <article class="endpoint-card">
+                    <span class="method-chip method-{{ endpoint.method|lower }}">{{ endpoint.method }}</span>
+                    <code>{{ endpoint.path }}</code>
+                    <p>{{ endpoint.summary }}</p>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</body>
+</html>

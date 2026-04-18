@@ -1,0 +1,34 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="28" fill="#0F172A"/>
+  <rect x="40" y="40" width="1120" height="640" rx="24" fill="#111827" stroke="#334155"/>
+  <rect x="72" y="84" width="240" height="552" rx="20" fill="#0B1220" stroke="#243041"/>
+  <rect x="344" y="84" width="784" height="92" rx="18" fill="#132033" stroke="#31445F"/>
+  <rect x="344" y="204" width="250" height="180" rx="18" fill="#172554"/>
+  <rect x="612" y="204" width="250" height="180" rx="18" fill="#1D4ED8"/>
+  <rect x="880" y="204" width="218" height="180" rx="18" fill="#0F766E"/>
+  <rect x="344" y="412" width="754" height="194" rx="18" fill="#0B1220" stroke="#243041"/>
+  <text x="84" y="130" fill="#E2E8F0" font-size="32" font-family="Arial">Internal Admin API</text>
+  <text x="84" y="184" fill="#94A3B8" font-size="20" font-family="Arial">Users</text>
+  <text x="84" y="222" fill="#94A3B8" font-size="20" font-family="Arial">Roles</text>
+  <text x="84" y="260" fill="#94A3B8" font-size="20" font-family="Arial">Permissions</text>
+  <text x="84" y="298" fill="#94A3B8" font-size="20" font-family="Arial">Audit Logs</text>
+  <text x="84" y="336" fill="#94A3B8" font-size="20" font-family="Arial">Org Hierarchy</text>
+  <text x="84" y="374" fill="#94A3B8" font-size="20" font-family="Arial">Import / Export</text>
+  <text x="372" y="138" fill="#F8FAFC" font-size="30" font-family="Arial">Operational Control Plane</text>
+  <text x="372" y="250" fill="#DBEAFE" font-size="24" font-family="Arial">Roles &amp; Permissions</text>
+  <text x="372" y="290" fill="#BFDBFE" font-size="18" font-family="Arial">Assign built-in Django permissions</text>
+  <text x="372" y="322" fill="#BFDBFE" font-size="18" font-family="Arial">Map roles to internal users</text>
+  <text x="640" y="250" fill="#EFF6FF" font-size="24" font-family="Arial">Org Hierarchy</text>
+  <text x="640" y="290" fill="#DBEAFE" font-size="18" font-family="Arial">Nested org units</text>
+  <text x="640" y="322" fill="#DBEAFE" font-size="18" font-family="Arial">Managers and ownership</text>
+  <text x="910" y="250" fill="#ECFDF5" font-size="24" font-family="Arial">Audit Trail</text>
+  <text x="910" y="290" fill="#CCFBF1" font-size="18" font-family="Arial">Actor</text>
+  <text x="910" y="322" fill="#CCFBF1" font-size="18" font-family="Arial">Action</text>
+  <text x="910" y="354" fill="#CCFBF1" font-size="18" font-family="Arial">IP Address</text>
+  <text x="372" y="456" fill="#E2E8F0" font-size="26" font-family="Arial">Sample REST Surface</text>
+  <text x="372" y="500" fill="#93C5FD" font-size="18" font-family="Courier New">GET /api/users/</text>
+  <text x="372" y="532" fill="#93C5FD" font-size="18" font-family="Courier New">POST /api/roles/</text>
+  <text x="372" y="564" fill="#93C5FD" font-size="18" font-family="Courier New">GET /api/org-units/tree/</text>
+  <text x="372" y="596" fill="#93C5FD" font-size="18" font-family="Courier New">POST /api/users/import/</text>
+</svg>
+
