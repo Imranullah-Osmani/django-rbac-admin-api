@@ -57,6 +57,14 @@ python manage.py shell -c "from config.bootstrap import ensure_system_roles, ens
 python manage.py runserver
 ```
 
+### Tests
+
+```bash
+python manage.py test accounts.tests organizations.tests
+```
+
+The repository now includes automated RBAC and organization-scope tests plus a GitHub Actions workflow at `.github/workflows/ci.yml`.
+
 ## Sample API endpoints
 
 - `POST /api/auth/token/` returns a JWT access/refresh pair
