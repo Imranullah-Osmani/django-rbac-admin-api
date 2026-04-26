@@ -26,4 +26,4 @@ jobs:
         run: python manage.py check
 
       - name: Run RBAC test suite
-        run: python manage.py test accounts.tests organizations.tests
+        run: python manage.py test accounts.tests organizations.tests config.tests

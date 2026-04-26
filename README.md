@@ -37,6 +37,7 @@ Open:
 - `http://localhost:8010/` for the landing page
 - `http://localhost:8010/admin/` for Django admin
 - `http://localhost:8010/api/` for the browsable API
+- `http://localhost:8010/health/ready/` for database readiness
 
 Default admin credentials:
 
@@ -60,7 +61,7 @@ python manage.py runserver
 ### Tests
 
 ```bash
-python manage.py test accounts.tests organizations.tests
+python manage.py test accounts.tests organizations.tests config.tests
 ```
 
 The repository now includes automated RBAC and organization-scope tests plus a GitHub Actions workflow at `.github/workflows/ci.yml`.
@@ -72,6 +73,7 @@ The repository now includes automated RBAC and organization-scope tests plus a G
 - `GET /api/users/me/` returns the authenticated operator profile
 - `GET /api/users/` lists users within the caller's permitted scope
 - `GET /api/org-units/tree/` returns the organization hierarchy
+- `GET /health/ready/` reports database readiness for Docker and deployment checks
 
 ## Example JWT login payload
 

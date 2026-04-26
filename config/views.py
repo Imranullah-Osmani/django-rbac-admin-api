@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from django.contrib import admin
-from django.db import OperationalError, ProgrammingError
+from django.db import OperationalError, ProgrammingError, connection
+from django.http import JsonResponse
 from django.shortcuts import render
 
 from accounts.models import Role, User
@@ -57,3 +58,16 @@ def _dashboard_context() -> dict:
 
 def home(request):
     return render(request, "home.html", _dashboard_context())
+
+
+def health_live(request):
+    return JsonResponse({"status": "ok"})
+
+
+def health_ready(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        return JsonResponse({"status": "ok", "database": "ok"})
+    except (OperationalError, ProgrammingError):
+        return JsonResponse({"status": "degraded", "database": "error"}, status=503)
