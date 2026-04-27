@@ -107,6 +107,10 @@ See [docs/case-study.md](docs/case-study.md) for the portfolio case study behind
 - the auditability and import/export workflow choices
 - the delivery outcome and why this type of API attracts startup clients
 
+## Monitoring notes
+
+See [docs/monitoring.md](docs/monitoring.md) for health endpoints, Docker health checks, and suggested production observability follow-up.
+
 ## Notes
 
 - System roles are bootstrapped automatically on startup and can be updated, but not deleted or replaced with arbitrary slugs.
