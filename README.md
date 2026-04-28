@@ -58,6 +58,16 @@ python manage.py shell -c "from config.bootstrap import ensure_system_roles, ens
 python manage.py runserver
 ```
 
+### Demo data
+
+For a stronger walkthrough, seed a small organization with manager and staff users:
+
+```bash
+python manage.py seed_demo_workspace
+```
+
+Demo workspace users use `ChangeMe123!` as the password and are intended for local portfolio review only.
+
 ### Tests
 
 ```bash

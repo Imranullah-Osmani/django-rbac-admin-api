@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 
 from accounts.models import Role, SYSTEM_ROLE_DEFINITIONS
+from organizations.models import OrganizationUnit
 
 
 def ensure_default_superuser() -> None:
@@ -48,3 +49,74 @@ def ensure_system_roles() -> None:
             },
         )
         role.permissions.set(permission_map[slug])
+
+
+def ensure_demo_workspace() -> dict[str, int]:
+    ensure_system_roles()
+    user_model = get_user_model()
+
+    operations, _ = OrganizationUnit.objects.update_or_create(
+        code="OPS",
+        defaults={"name": "Operations", "metadata": {"region": "global"}},
+    )
+    support, _ = OrganizationUnit.objects.update_or_create(
+        code="SUP",
+        defaults={"name": "Support", "parent": operations, "metadata": {"coverage": "24x7"}},
+    )
+    finance, _ = OrganizationUnit.objects.update_or_create(
+        code="FIN",
+        defaults={"name": "Finance", "metadata": {"region": "global"}},
+    )
+
+    demo_users = [
+        {
+            "username": "ops.manager",
+            "email": "ops.manager@example.com",
+            "first_name": "Operations",
+            "last_name": "Manager",
+            "title": "Operations Manager",
+            "org_unit": operations,
+            "role": "manager",
+        },
+        {
+            "username": "support.staff",
+            "email": "support.staff@example.com",
+            "first_name": "Support",
+            "last_name": "Staff",
+            "title": "Support Specialist",
+            "org_unit": support,
+            "role": "staff",
+        },
+        {
+            "username": "finance.staff",
+            "email": "finance.staff@example.com",
+            "first_name": "Finance",
+            "last_name": "Staff",
+            "title": "Finance Analyst",
+            "org_unit": finance,
+            "role": "staff",
+        },
+    ]
+
+    for demo_user in demo_users:
+        role = Role.objects.get(slug=demo_user.pop("role"))
+        user, _ = user_model.objects.update_or_create(
+            username=demo_user["username"],
+            defaults={
+                "email": demo_user["email"],
+                "first_name": demo_user["first_name"],
+                "last_name": demo_user["last_name"],
+                "title": demo_user["title"],
+                "org_unit": demo_user["org_unit"],
+                "is_active": True,
+                "is_staff": False,
+            },
+        )
+        user.set_password("ChangeMe123!")
+        user.save(update_fields=["password"])
+        user.roles.set([role])
+
+    return {
+        "org_units": OrganizationUnit.objects.filter(code__in=["OPS", "SUP", "FIN"]).count(),
+        "demo_users": user_model.objects.filter(username__in=[user["username"] for user in demo_users]).count(),
+    }
