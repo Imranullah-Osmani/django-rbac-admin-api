@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -158,3 +159,42 @@ class RBACAccessTests(APITestCase):
         returned_slugs = {item["slug"] for item in list_response.data["results"]}
         self.assertEqual(returned_slugs, {"admin", "manager", "staff"})
         self.assertEqual(create_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_manager_csv_import_cannot_bypass_org_scope_or_admin_role(self):
+        self.client.force_authenticate(user=self.manager_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "bad-admin,bad-admin@example.com,Bad,Admin,Lead,OPS,admin\n"
+                "finance-import,finance-import@example.com,Finance,Import,Analyst,FIN,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(User.objects.filter(email="bad-admin@example.com").exists())
+        self.assertFalse(User.objects.filter(email="finance-import@example.com").exists())
+        self.assertIn("Managers cannot import admin users.", str(response.data))
+        self.assertIn("Managers can only import users into their own organization unit.", str(response.data))
+
+    def test_admin_csv_import_reports_unknown_role_without_writing_rows(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "unknown-role,unknown-role@example.com,Unknown,Role,Analyst,OPS,security\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(User.objects.filter(email="unknown-role@example.com").exists())
+        self.assertIn("Unknown roles: security.", str(response.data))
