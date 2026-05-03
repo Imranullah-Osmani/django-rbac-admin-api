@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import Role
+from audits.models import AuditLog
 from config.bootstrap import ensure_system_roles
 from organizations.models import OrganizationUnit
 
@@ -198,3 +199,32 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.data["processed"], 0)
         self.assertFalse(User.objects.filter(email="unknown-role@example.com").exists())
         self.assertIn("Unknown roles: security.", str(response.data))
+
+    def test_admin_csv_import_writes_audit_log_for_successful_bulk_change(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "bulk-staff,bulk-staff@example.com,Bulk,Staff,Analyst,OPS,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(User.objects.filter(email="bulk-staff@example.com").exists())
+        audit_log = AuditLog.objects.get(action="imported", target_model="User")
+        self.assertEqual(audit_log.actor, self.admin_user)
+        self.assertEqual(audit_log.changes, {"record_count": 1})
+
+    def test_user_export_writes_audit_log_with_visible_record_count(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.get(reverse("user-export-users"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        audit_log = AuditLog.objects.get(action="exported", target_model="User")
+        self.assertEqual(audit_log.actor, self.manager_user)
+        self.assertEqual(audit_log.changes, {"record_count": 2})
