@@ -85,6 +85,8 @@ The repository now includes automated RBAC and organization-scope tests plus a G
 - `GET /api/org-units/tree/` returns the organization hierarchy
 - `GET /health/ready/` reports database readiness for Docker and deployment checks
 
+See [docs/api-examples.md](docs/api-examples.md) for curl examples covering login, scoped users, CSV import/export, and the org tree.
+
 ## Example JWT login payload
 
 ```json
