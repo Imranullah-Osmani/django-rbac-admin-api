@@ -22,8 +22,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Validate Docker Compose config
+        run: docker compose config --quiet
+
       - name: Run Django checks
         run: python manage.py check
+
+      - name: Check migration drift
+        run: python manage.py makemigrations --check --dry-run
 
       - name: Run RBAC test suite
         run: python manage.py test accounts.tests organizations.tests config.tests
