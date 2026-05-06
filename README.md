@@ -74,6 +74,12 @@ Demo workspace users use `ChangeMe123!` as the password and are intended for loc
 python manage.py test accounts.tests organizations.tests config.tests
 ```
 
+For the full local verification flow used by CI:
+
+```powershell
+.\scripts\verify.ps1
+```
+
 The repository now includes automated RBAC and organization-scope tests plus a GitHub Actions workflow at `.github/workflows/ci.yml`.
 
 ## Sample API endpoints
