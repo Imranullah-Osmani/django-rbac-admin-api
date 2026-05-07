@@ -129,6 +129,10 @@ See [docs/case-study.md](docs/case-study.md) for the portfolio case study behind
 
 See [docs/monitoring.md](docs/monitoring.md) for health endpoints, Docker health checks, and suggested production observability follow-up.
 
+## Security
+
+See [SECURITY.md](SECURITY.md) for supported security scope, reporting guidance, and local hardening notes.
+
 ## Notes
 
 - System roles are bootstrapped automatically on startup and can be updated, but not deleted or replaced with arbitrary slugs.
