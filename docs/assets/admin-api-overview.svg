@@ -1,34 +1,82 @@
-<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="720" rx="28" fill="#0F172A"/>
-  <rect x="40" y="40" width="1120" height="640" rx="24" fill="#111827" stroke="#334155"/>
-  <rect x="72" y="84" width="240" height="552" rx="20" fill="#0B1220" stroke="#243041"/>
-  <rect x="344" y="84" width="784" height="92" rx="18" fill="#132033" stroke="#31445F"/>
-  <rect x="344" y="204" width="250" height="180" rx="18" fill="#172554"/>
-  <rect x="612" y="204" width="250" height="180" rx="18" fill="#1D4ED8"/>
-  <rect x="880" y="204" width="218" height="180" rx="18" fill="#0F766E"/>
-  <rect x="344" y="412" width="754" height="194" rx="18" fill="#0B1220" stroke="#243041"/>
-  <text x="84" y="130" fill="#E2E8F0" font-size="32" font-family="Arial">Internal Admin API</text>
-  <text x="84" y="184" fill="#94A3B8" font-size="20" font-family="Arial">Users</text>
-  <text x="84" y="222" fill="#94A3B8" font-size="20" font-family="Arial">Roles</text>
-  <text x="84" y="260" fill="#94A3B8" font-size="20" font-family="Arial">Permissions</text>
-  <text x="84" y="298" fill="#94A3B8" font-size="20" font-family="Arial">Audit Logs</text>
-  <text x="84" y="336" fill="#94A3B8" font-size="20" font-family="Arial">Org Hierarchy</text>
-  <text x="84" y="374" fill="#94A3B8" font-size="20" font-family="Arial">Import / Export</text>
-  <text x="372" y="138" fill="#F8FAFC" font-size="30" font-family="Arial">Operational Control Plane</text>
-  <text x="372" y="250" fill="#DBEAFE" font-size="24" font-family="Arial">Roles &amp; Permissions</text>
-  <text x="372" y="290" fill="#BFDBFE" font-size="18" font-family="Arial">Assign built-in Django permissions</text>
-  <text x="372" y="322" fill="#BFDBFE" font-size="18" font-family="Arial">Map roles to internal users</text>
-  <text x="640" y="250" fill="#EFF6FF" font-size="24" font-family="Arial">Org Hierarchy</text>
-  <text x="640" y="290" fill="#DBEAFE" font-size="18" font-family="Arial">Nested org units</text>
-  <text x="640" y="322" fill="#DBEAFE" font-size="18" font-family="Arial">Managers and ownership</text>
-  <text x="910" y="250" fill="#ECFDF5" font-size="24" font-family="Arial">Audit Trail</text>
-  <text x="910" y="290" fill="#CCFBF1" font-size="18" font-family="Arial">Actor</text>
-  <text x="910" y="322" fill="#CCFBF1" font-size="18" font-family="Arial">Action</text>
-  <text x="910" y="354" fill="#CCFBF1" font-size="18" font-family="Arial">IP Address</text>
-  <text x="372" y="456" fill="#E2E8F0" font-size="26" font-family="Arial">Sample REST Surface</text>
-  <text x="372" y="500" fill="#93C5FD" font-size="18" font-family="Courier New">GET /api/users/</text>
-  <text x="372" y="532" fill="#93C5FD" font-size="18" font-family="Courier New">POST /api/roles/</text>
-  <text x="372" y="564" fill="#93C5FD" font-size="18" font-family="Courier New">GET /api/org-units/tree/</text>
-  <text x="372" y="596" fill="#93C5FD" font-size="18" font-family="Courier New">POST /api/users/import/</text>
-</svg>
+<svg width="1400" height="820" viewBox="0 0 1400 820" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Django RBAC Internal Admin API preview</title>
+  <desc id="desc">A clean preview of the internal admin API showing RBAC, organization hierarchy, import export, and audit logging.</desc>
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="1400" y2="820" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111F"/>
+      <stop offset="1" stop-color="#10233A"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#020617" flood-opacity="0.35"/>
+    </filter>
+  </defs>
 
+  <rect width="1400" height="820" rx="34" fill="url(#page)"/>
+  <rect x="54" y="52" width="1292" height="716" rx="30" fill="#0B1526" stroke="#29415F" stroke-width="2" filter="url(#shadow)"/>
+
+  <rect x="92" y="104" width="306" height="612" rx="24" fill="#09111F" stroke="#223A57" stroke-width="2"/>
+  <text x="126" y="166" fill="#F8FAFC" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Admin API</text>
+  <text x="126" y="206" fill="#7DD3FC" font-size="18" font-family="Segoe UI, Arial, sans-serif">Django + JWT + RBAC</text>
+
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#C7D2FE">
+    <text x="126" y="282">Users</text>
+    <text x="126" y="336">Roles</text>
+    <text x="126" y="390">Permissions</text>
+    <text x="126" y="444">Organization Units</text>
+    <text x="126" y="498">Audit Logs</text>
+    <text x="126" y="552">CSV Import / Export</text>
+  </g>
+  <g fill="#38BDF8">
+    <circle cx="106" cy="274" r="6"/>
+    <circle cx="106" cy="328" r="6"/>
+    <circle cx="106" cy="382" r="6"/>
+    <circle cx="106" cy="436" r="6"/>
+    <circle cx="106" cy="490" r="6"/>
+    <circle cx="106" cy="544" r="6"/>
+  </g>
+
+  <rect x="438" y="104" width="854" height="102" rx="24" fill="#11243A" stroke="#315170" stroke-width="2"/>
+  <text x="476" y="165" fill="#F8FAFC" font-size="38" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Internal Operations Control Plane</text>
+
+  <rect x="438" y="244" width="258" height="164" rx="22" fill="#172554"/>
+  <rect x="728" y="244" width="258" height="164" rx="22" fill="url(#blue)"/>
+  <rect x="1018" y="244" width="274" height="164" rx="22" fill="url(#green)"/>
+
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="472" y="300" fill="#EFF6FF" font-size="26" font-weight="700">RBAC</text>
+    <text x="472" y="342" fill="#BFDBFE" font-size="19">admin / manager / staff</text>
+    <text x="472" y="374" fill="#BFDBFE" font-size="19">protected API endpoints</text>
+
+    <text x="762" y="300" fill="#FFFFFF" font-size="26" font-weight="700">Org Hierarchy</text>
+    <text x="762" y="342" fill="#DBEAFE" font-size="19">parent-child units</text>
+    <text x="762" y="374" fill="#DBEAFE" font-size="19">manager scoped access</text>
+
+    <text x="1052" y="300" fill="#ECFDF5" font-size="26" font-weight="700">Audit Trail</text>
+    <text x="1052" y="342" fill="#CCFBF1" font-size="19">actor, action, object</text>
+    <text x="1052" y="374" fill="#CCFBF1" font-size="19">import/export tracking</text>
+  </g>
+
+  <rect x="438" y="448" width="854" height="268" rx="24" fill="#09111F" stroke="#223A57" stroke-width="2"/>
+  <text x="476" y="506" fill="#F8FAFC" font-size="30" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Sample REST Surface</text>
+  <g font-family="Cascadia Code, Consolas, monospace" font-size="22">
+    <rect x="476" y="542" width="96" height="34" rx="8" fill="#0F766E"/>
+    <text x="500" y="566" fill="#ECFDF5">GET</text>
+    <text x="594" y="566" fill="#BAE6FD">/api/users/</text>
+
+    <rect x="476" y="590" width="96" height="34" rx="8" fill="#1D4ED8"/>
+    <text x="492" y="614" fill="#EFF6FF">POST</text>
+    <text x="594" y="614" fill="#BAE6FD">/api/users/import/</text>
+
+    <rect x="476" y="638" width="96" height="34" rx="8" fill="#0F766E"/>
+    <text x="500" y="662" fill="#ECFDF5">GET</text>
+    <text x="594" y="662" fill="#BAE6FD">/api/org-units/tree/</text>
+  </g>
+</svg>
