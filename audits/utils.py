@@ -7,9 +7,12 @@ def create_audit_log(request, action: str, target, changes: dict | None = None, 
     target_repr = target_model if isinstance(target, type) else str(target)
     actor = getattr(request, "user", None)
     ip_address = None
+    metadata = metadata.copy() if metadata else {}
     if request:
         forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
         ip_address = (forwarded.split(",")[0] if forwarded else request.META.get("REMOTE_ADDR")) or None
+        metadata.setdefault("method", request.method)
+        metadata.setdefault("path", request.path)
     if not getattr(actor, "is_authenticated", False):
         actor = None
 
@@ -20,7 +23,6 @@ def create_audit_log(request, action: str, target, changes: dict | None = None, 
         target_id=target_id,
         target_repr=target_repr,
         changes=changes or {},
-        metadata=metadata or {},
+        metadata=metadata,
         ip_address=ip_address,
     )
-

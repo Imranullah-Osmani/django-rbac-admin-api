@@ -218,6 +218,8 @@ class RBACAccessTests(APITestCase):
         audit_log = AuditLog.objects.get(action="imported", target_model="User")
         self.assertEqual(audit_log.actor, self.admin_user)
         self.assertEqual(audit_log.changes, {"record_count": 1})
+        self.assertEqual(audit_log.metadata["method"], "POST")
+        self.assertEqual(audit_log.metadata["path"], reverse("user-import-users"))
 
     def test_user_export_writes_audit_log_with_visible_record_count(self):
         self.client.force_authenticate(user=self.manager_user)
@@ -228,3 +230,5 @@ class RBACAccessTests(APITestCase):
         audit_log = AuditLog.objects.get(action="exported", target_model="User")
         self.assertEqual(audit_log.actor, self.manager_user)
         self.assertEqual(audit_log.changes, {"record_count": 2})
+        self.assertEqual(audit_log.metadata["method"], "GET")
+        self.assertEqual(audit_log.metadata["path"], reverse("user-export-users"))
