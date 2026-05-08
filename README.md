@@ -133,6 +133,10 @@ See [docs/monitoring.md](docs/monitoring.md) for health endpoints, Docker health
 
 See [SECURITY.md](SECURITY.md) for supported security scope, reporting guidance, and local hardening notes.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, verification, and pull request guidelines.
+
 ## Notes
 
 - System roles are bootstrapped automatically on startup and can be updated, but not deleted or replaced with arbitrary slugs.
