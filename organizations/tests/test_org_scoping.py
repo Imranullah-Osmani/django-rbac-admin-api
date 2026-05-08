@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -63,3 +64,52 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["code"], "OPS")
         self.assertEqual(response.data[0]["children"], [{"id": self.customer_success.id, "name": "Customer Success", "code": "CS"}])
+
+    def test_org_unit_update_rejects_descendant_as_parent(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.patch(
+            reverse("org-unit-detail", args=[self.operations.id]),
+            {"parent": self.customer_success.id},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("descendants as parent", str(response.data))
+
+    def test_org_csv_import_rejects_parent_cycles_without_writing_rows(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code\n"
+                "Risk,RISK,AUDIT\n"
+                "Audit,AUDIT,RISK\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(OrganizationUnit.objects.filter(code__in=["RISK", "AUDIT"]).exists())
+        self.assertIn("parent cycle", str(response.data))
+
+    def test_org_csv_import_links_parent_created_in_same_file(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code\n"
+                "Security,SEC,\n"
+                "AppSec,APPSEC,SEC\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["processed"], 2)
+        self.assertEqual(OrganizationUnit.objects.get(code="APPSEC").parent.code, "SEC")

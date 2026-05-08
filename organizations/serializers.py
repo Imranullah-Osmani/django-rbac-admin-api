@@ -29,3 +29,18 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
 
     def get_manager_name(self, obj: OrganizationUnit) -> str:
         return obj.manager.get_full_name() if obj.manager else ""
+
+    def validate_parent(self, parent: OrganizationUnit | None) -> OrganizationUnit | None:
+        if parent is None or self.instance is None:
+            return parent
+
+        if parent.id == self.instance.id:
+            raise serializers.ValidationError("An organization unit cannot be its own parent.")
+
+        current = parent
+        while current is not None:
+            if current.id == self.instance.id:
+                raise serializers.ValidationError("An organization unit cannot use one of its descendants as parent.")
+            current = current.parent
+
+        return parent
