@@ -85,6 +85,15 @@ class UserSerializer(serializers.ModelSerializer):
     def get_primary_role(self, obj: User) -> str:
         return obj.role_slugs[0] if obj.role_slugs else ""
 
+    def validate_email(self, value: str) -> str:
+        normalized = value.strip().lower()
+        queryset = User.objects.filter(email__iexact=normalized)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return normalized
+
     def validate(self, attrs):
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:

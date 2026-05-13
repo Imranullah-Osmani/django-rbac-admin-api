@@ -146,6 +146,45 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Managers can only manage users inside their own organization unit.", str(response.data))
 
+    def test_user_create_normalizes_email_and_rejects_case_insensitive_duplicates(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        create_response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "mixed-email",
+                "email": "Mixed.Email@Example.COM",
+                "first_name": "Mixed",
+                "last_name": "Email",
+                "title": "Analyst",
+                "org_unit": self.operations.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+                "is_staff": False,
+            },
+            format="multipart",
+        )
+        duplicate_response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "duplicate-email",
+                "email": "mixed.email@example.com",
+                "first_name": "Duplicate",
+                "last_name": "Email",
+                "title": "Analyst",
+                "org_unit": self.operations.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+                "is_staff": False,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(User.objects.get(username="mixed-email").email, "mixed.email@example.com")
+        self.assertEqual(duplicate_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("user with this email already exists", str(duplicate_response.data))
+
     def test_admin_sees_only_fixed_system_roles_and_cannot_create_new_ones(self):
         self.client.force_authenticate(user=self.admin_user)
 
