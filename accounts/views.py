@@ -121,16 +121,21 @@ class UserViewSet(viewsets.ModelViewSet):
         processed = 0
         with transaction.atomic():
             for prepared in prepared_rows:
-                user, _ = User.objects.update_or_create(
-                    email=prepared["email"],
-                    defaults={
-                        "username": prepared["username"],
-                        "first_name": prepared["first_name"],
-                        "last_name": prepared["last_name"],
-                        "title": prepared["title"],
-                        "org_unit": prepared["org_unit"],
-                    },
-                )
+                user = User.objects.filter(email__iexact=prepared["email"]).first()
+                defaults = {
+                    "username": prepared["username"],
+                    "email": prepared["email"],
+                    "first_name": prepared["first_name"],
+                    "last_name": prepared["last_name"],
+                    "title": prepared["title"],
+                    "org_unit": prepared["org_unit"],
+                }
+                if user:
+                    for field, value in defaults.items():
+                        setattr(user, field, value)
+                    user.save(update_fields=[*defaults.keys()])
+                else:
+                    user = User.objects.create(**defaults)
                 user.roles.set(prepared["roles"])
                 processed += 1
 
@@ -145,7 +150,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         for row_number, row in enumerate(rows, start=2):
             username = (row.get("username") or "").strip()
-            email = (row.get("email") or "").strip()
+            email = (row.get("email") or "").strip().lower()
             org_code = (row.get("org_unit_code") or "").strip()
             role_slugs = [slug.strip() for slug in (row.get("role_slugs") or "").split(",") if slug.strip()]
 

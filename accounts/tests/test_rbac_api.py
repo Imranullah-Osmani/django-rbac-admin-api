@@ -260,6 +260,33 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(audit_log.metadata["method"], "POST")
         self.assertEqual(audit_log.metadata["path"], reverse("user-import-users"))
 
+    def test_csv_import_updates_existing_user_by_case_insensitive_email(self):
+        self.client.force_authenticate(user=self.admin_user)
+        existing = self.create_user(
+            username="case-import",
+            email="case-import@example.com",
+            password="ChangeMe123!",
+            org_unit=self.operations,
+            roles=[self.staff_role],
+        )
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "case-import-updated,CASE-IMPORT@EXAMPLE.COM,Case,Import,Lead,OPS,manager\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        existing.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(User.objects.filter(email__iexact="case-import@example.com").count(), 1)
+        self.assertEqual(existing.username, "case-import-updated")
+        self.assertEqual(existing.email, "case-import@example.com")
+        self.assertEqual(existing.role_slugs, ["manager"])
+
     def test_user_export_writes_audit_log_with_visible_record_count(self):
         self.client.force_authenticate(user=self.manager_user)
 
