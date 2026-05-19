@@ -48,7 +48,7 @@ class UserSerializer(serializers.ModelSerializer):
     role_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         write_only=True,
-        queryset=Role.objects.all(),
+        queryset=Role.objects.filter(slug__in=["admin", "manager", "staff"]),
         source="roles",
         required=False,
     )

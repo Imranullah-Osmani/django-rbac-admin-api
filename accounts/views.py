@@ -165,7 +165,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 if not org_unit:
                     errors.append({"row": row_number, "field": "org_unit_code", "detail": f"Unknown organization unit `{org_code}`."})
 
-            roles = list(Role.objects.filter(slug__in=role_slugs))
+            roles = list(Role.objects.filter(slug__in=role_slugs, is_system=True))
             found_role_slugs = {role.slug for role in roles}
             missing_role_slugs = sorted(set(role_slugs) - found_role_slugs)
             if missing_role_slugs:
