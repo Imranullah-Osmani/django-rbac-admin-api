@@ -185,6 +185,28 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(duplicate_response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("user with this email already exists", str(duplicate_response.data))
 
+    def test_user_create_rejects_case_insensitive_username_duplicates(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "ADMIN",
+                "email": "admin-alias@example.com",
+                "first_name": "Admin",
+                "last_name": "Alias",
+                "title": "Analyst",
+                "org_unit": self.operations.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+                "is_staff": False,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("user with this username already exists", str(response.data))
+
     def test_admin_sees_only_fixed_system_roles_and_cannot_create_new_ones(self):
         self.client.force_authenticate(user=self.admin_user)
 
@@ -347,6 +369,44 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.data["processed"], 0)
         self.assertFalse(User.objects.filter(email__iexact="duplicate@example.com").exists())
         self.assertIn("Duplicate email also appears on row 2.", str(response.data))
+
+    def test_csv_import_rejects_duplicate_username_inside_same_file(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "duplicate-user,first-duplicate-user@example.com,First,Duplicate,Analyst,OPS,staff\n"
+                "DUPLICATE-USER,second-duplicate-user@example.com,Second,Duplicate,Analyst,OPS,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(User.objects.filter(email__iexact="first-duplicate-user@example.com").exists())
+        self.assertFalse(User.objects.filter(email__iexact="second-duplicate-user@example.com").exists())
+        self.assertIn("Duplicate username also appears on row 2.", str(response.data))
+
+    def test_csv_import_rejects_username_assigned_to_another_email(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "admin,admin-conflict@example.com,Admin,Conflict,Analyst,OPS,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(User.objects.filter(email__iexact="admin-conflict@example.com").exists())
+        self.assertIn("Username is already assigned to another user.", str(response.data))
 
     def test_user_export_writes_audit_log_with_visible_record_count(self):
         self.client.force_authenticate(user=self.manager_user)

@@ -145,6 +145,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def _prepare_user_import_rows(self, rows):
         errors = []
         prepared_rows = []
+        seen_usernames = {}
         seen_emails = {}
         operator = self.request.user
         manager_mode = not operator.is_admin_role()
@@ -157,6 +158,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
             if not username:
                 errors.append({"row": row_number, "field": "username", "detail": "Username is required."})
+            else:
+                username_key = username.lower()
+                if username_key in seen_usernames:
+                    errors.append(
+                        {
+                            "row": row_number,
+                            "field": "username",
+                            "detail": f"Duplicate username also appears on row {seen_usernames[username_key]}.",
+                        }
+                    )
+                else:
+                    seen_usernames[username_key] = row_number
+                if User.objects.filter(username__iexact=username).exclude(email__iexact=email).exists():
+                    errors.append(
+                        {
+                            "row": row_number,
+                            "field": "username",
+                            "detail": "Username is already assigned to another user.",
+                        }
+                    )
             if not email:
                 errors.append({"row": row_number, "field": "email", "detail": "Email is required."})
             elif email in seen_emails:
