@@ -329,6 +329,25 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(existing.email, "case-import@example.com")
         self.assertEqual(existing.role_slugs, ["manager"])
 
+    def test_csv_import_rejects_duplicate_email_inside_same_file(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "first-duplicate,DUPLICATE@EXAMPLE.COM,First,Duplicate,Analyst,OPS,staff\n"
+                "second-duplicate,duplicate@example.com,Second,Duplicate,Analyst,OPS,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(User.objects.filter(email__iexact="duplicate@example.com").exists())
+        self.assertIn("Duplicate email also appears on row 2.", str(response.data))
+
     def test_user_export_writes_audit_log_with_visible_record_count(self):
         self.client.force_authenticate(user=self.manager_user)
 
