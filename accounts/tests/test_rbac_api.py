@@ -419,3 +419,35 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(audit_log.changes, {"record_count": 2})
         self.assertEqual(audit_log.metadata["method"], "GET")
         self.assertEqual(audit_log.metadata["path"], reverse("user-export-users"))
+
+    def test_admin_can_search_audit_logs_for_operational_events(self):
+        self.client.force_authenticate(user=self.admin_user)
+        AuditLog.objects.create(
+            actor=self.admin_user,
+            action="exported",
+            target_model="User",
+            target_repr="User CSV export",
+        )
+        AuditLog.objects.create(
+            actor=self.admin_user,
+            action="updated",
+            target_model="Role",
+            target_repr="Manager role",
+        )
+
+        response = self.client.get(reverse("audit-log-list"), {"search": "exported"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        actions = [item["action"] for item in response.data["results"]]
+        self.assertEqual(actions, ["exported"])
+
+    def test_audit_log_list_returns_newest_events_first(self):
+        self.client.force_authenticate(user=self.admin_user)
+        older = AuditLog.objects.create(actor=self.admin_user, action="created", target_model="User")
+        newer = AuditLog.objects.create(actor=self.admin_user, action="deleted", target_model="User")
+
+        response = self.client.get(reverse("audit-log-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_ids = [item["id"] for item in response.data["results"][:2]]
+        self.assertEqual(returned_ids, [newer.id, older.id])
