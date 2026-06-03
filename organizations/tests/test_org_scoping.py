@@ -77,6 +77,25 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("descendants as parent", str(response.data))
 
+    def test_org_unit_create_normalizes_code_and_rejects_case_insensitive_duplicates(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        create_response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "Security Operations", "code": " secops "},
+            format="multipart",
+        )
+        duplicate_response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "Duplicate Security Operations", "code": "SECOPS"},
+            format="multipart",
+        )
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(OrganizationUnit.objects.get(name="Security Operations").code, "SECOPS")
+        self.assertEqual(duplicate_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("organization unit with this code already exists", str(duplicate_response.data))
+
     def test_org_csv_import_rejects_parent_cycles_without_writing_rows(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(
@@ -95,6 +114,25 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.data["processed"], 0)
         self.assertFalse(OrganizationUnit.objects.filter(code__in=["RISK", "AUDIT"]).exists())
         self.assertIn("parent cycle", str(response.data))
+
+    def test_org_csv_import_rejects_duplicate_codes_inside_same_file(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code\n"
+                "Security,sec,\n"
+                "Security Duplicate,SEC,\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(OrganizationUnit.objects.filter(code="SEC").exists())
+        self.assertIn("Duplicate code also appears on row 2.", str(response.data))
 
     def test_org_csv_import_links_parent_created_in_same_file(self):
         self.client.force_authenticate(user=self.admin_user)

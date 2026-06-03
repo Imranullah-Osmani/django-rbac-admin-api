@@ -108,18 +108,23 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
     def _prepare_org_import_rows(self, rows):
         errors = []
         prepared_rows = []
-        existing_units = {unit.code: unit for unit in OrganizationUnit.objects.all()}
-        incoming_codes = {(row.get("code") or "").strip() for row in rows if (row.get("code") or "").strip()}
+        seen_codes = {}
+        existing_units = {unit.code.upper(): unit for unit in OrganizationUnit.objects.all()}
+        incoming_codes = {(row.get("code") or "").strip().upper() for row in rows if (row.get("code") or "").strip()}
 
         for row_number, row in enumerate(rows, start=2):
             name = (row.get("name") or "").strip()
-            code = (row.get("code") or "").strip()
-            parent_code = (row.get("parent_code") or "").strip()
+            code = (row.get("code") or "").strip().upper()
+            parent_code = (row.get("parent_code") or "").strip().upper()
 
             if not name:
                 errors.append({"row": row_number, "field": "name", "detail": "Name is required."})
             if not code:
                 errors.append({"row": row_number, "field": "code", "detail": "Code is required."})
+            elif code in seen_codes:
+                errors.append({"row": row_number, "field": "code", "detail": f"Duplicate code also appears on row {seen_codes[code]}."})
+            else:
+                seen_codes[code] = row_number
             if code and parent_code == code:
                 errors.append({"row": row_number, "field": "parent_code", "detail": "An organization unit cannot be its own parent."})
             if parent_code and parent_code not in existing_units and parent_code not in incoming_codes:

@@ -30,6 +30,15 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
     def get_manager_name(self, obj: OrganizationUnit) -> str:
         return obj.manager.get_full_name() if obj.manager else ""
 
+    def validate_code(self, value: str) -> str:
+        normalized = value.strip().upper()
+        queryset = OrganizationUnit.objects.filter(code__iexact=normalized)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("An organization unit with this code already exists.")
+        return normalized
+
     def validate_parent(self, parent: OrganizationUnit | None) -> OrganizationUnit | None:
         if parent is None or self.instance is None:
             return parent
