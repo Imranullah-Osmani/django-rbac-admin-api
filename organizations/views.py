@@ -108,6 +108,9 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
     def _prepare_org_import_rows(self, rows):
         errors = []
         prepared_rows = []
+        operator = self.request.user
+        manager_mode = not operator.is_admin_role()
+        operator_org_code = operator.org_unit.code.upper() if manager_mode and operator.org_unit_id else ""
         seen_codes = {}
         existing_units = {unit.code.upper(): unit for unit in OrganizationUnit.objects.all()}
         incoming_codes = {(row.get("code") or "").strip().upper() for row in rows if (row.get("code") or "").strip()}
@@ -129,6 +132,17 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
                 errors.append({"row": row_number, "field": "parent_code", "detail": "An organization unit cannot be its own parent."})
             if parent_code and parent_code not in existing_units and parent_code not in incoming_codes:
                 errors.append({"row": row_number, "field": "parent_code", "detail": f"Unknown parent organization unit `{parent_code}`."})
+            if manager_mode:
+                if not operator_org_code:
+                    errors.append({"row": row_number, "field": "parent_code", "detail": "Manager must belong to an organization unit."})
+                elif parent_code != operator_org_code:
+                    errors.append(
+                        {
+                            "row": row_number,
+                            "field": "parent_code",
+                            "detail": "Managers can only import child organization units under their own organization unit.",
+                        }
+                    )
 
             prepared_rows.append({"name": name, "code": code, "parent_code": parent_code})
 
