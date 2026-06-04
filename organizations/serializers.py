@@ -30,6 +30,19 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
     def get_manager_name(self, obj: OrganizationUnit) -> str:
         return obj.manager.get_full_name() if obj.manager else ""
 
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated or request.user.is_admin_role():
+            return attrs
+
+        operator = request.user
+        parent = attrs.get("parent", getattr(self.instance, "parent", None))
+        if not operator.org_unit_id:
+            raise serializers.ValidationError("Managers must belong to an organization unit before managing org units.")
+        if not parent or parent.id != operator.org_unit_id:
+            raise serializers.ValidationError("Managers can only manage child organization units under their own organization unit.")
+        return attrs
+
     def validate_code(self, value: str) -> str:
         normalized = value.strip().upper()
         queryset = OrganizationUnit.objects.filter(code__iexact=normalized)

@@ -77,6 +77,19 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("descendants as parent", str(response.data))
 
+    def test_manager_cannot_create_org_unit_outside_own_branch(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "Finance Operations", "code": "FINOPS", "parent": self.finance.id},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(OrganizationUnit.objects.filter(code="FINOPS").exists())
+        self.assertIn("under their own organization unit", str(response.data))
+
     def test_org_unit_create_normalizes_code_and_rejects_case_insensitive_duplicates(self):
         self.client.force_authenticate(user=self.admin_user)
 
