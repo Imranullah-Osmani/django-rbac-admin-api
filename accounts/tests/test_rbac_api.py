@@ -463,3 +463,13 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([item["action"] for item in response.data["results"]], ["created"])
         self.assertEqual([item["target_model"] for item in response.data["results"]], ["User"])
+
+    def test_admin_can_filter_audit_logs_by_actor_email(self):
+        self.client.force_authenticate(user=self.admin_user)
+        AuditLog.objects.create(actor=self.admin_user, action="created", target_model="User")
+        AuditLog.objects.create(actor=self.manager_user, action="exported", target_model="User")
+
+        response = self.client.get(reverse("audit-log-list"), {"actor_email": "MANAGER@EXAMPLE.COM"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([item["actor_email"] for item in response.data["results"]], ["manager@example.com"])
