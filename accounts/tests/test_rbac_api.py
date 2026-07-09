@@ -324,6 +324,22 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(audit_log.metadata["method"], "POST")
         self.assertEqual(audit_log.metadata["path"], reverse("user-import-users"))
 
+    def test_csv_import_matches_org_unit_code_case_insensitively(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "lower-org,lower-org@example.com,Lower,Org,Analyst,ops,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(User.objects.get(email="lower-org@example.com").org_unit, self.operations)
+
     def test_csv_import_updates_existing_user_by_case_insensitive_email(self):
         self.client.force_authenticate(user=self.admin_user)
         existing = self.create_user(
