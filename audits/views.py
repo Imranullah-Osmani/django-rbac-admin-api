@@ -19,10 +19,10 @@ class AuditLogViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         action = self.request.query_params.get("action")
         target_model = self.request.query_params.get("target_model")
         actor_email = self.request.query_params.get("actor_email")
-        if action:
+        if action and action.strip():
             queryset = queryset.filter(action=action.strip().lower())
-        if target_model:
+        if target_model and target_model.strip():
             queryset = queryset.filter(target_model__iexact=target_model.strip())
-        if actor_email:
+        if actor_email and actor_email.strip():
             queryset = queryset.filter(actor__email__iexact=actor_email.strip())
         return queryset
