@@ -154,7 +154,7 @@ class UserViewSet(viewsets.ModelViewSet):
             username = (row.get("username") or "").strip()
             email = (row.get("email") or "").strip().lower()
             org_code = (row.get("org_unit_code") or "").strip().upper()
-            role_slugs = [slug.strip() for slug in (row.get("role_slugs") or "").split(",") if slug.strip()]
+            role_slugs = [slug.strip().lower() for slug in (row.get("role_slugs") or "").split(",") if slug.strip()]
 
             if not username:
                 errors.append({"row": row_number, "field": "username", "detail": "Username is required."})
