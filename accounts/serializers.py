@@ -85,6 +85,21 @@ class UserSerializer(serializers.ModelSerializer):
     def get_primary_role(self, obj: User) -> str:
         return obj.role_slugs[0] if obj.role_slugs else ""
 
+    def _strip_optional_text(self, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
+
+    def validate_first_name(self, value: str) -> str:
+        return self._strip_optional_text(value)
+
+    def validate_last_name(self, value: str) -> str:
+        return self._strip_optional_text(value)
+
+    def validate_title(self, value: str) -> str:
+        return self._strip_optional_text(value)
+
+    def validate_phone_number(self, value: str) -> str:
+        return self._strip_optional_text(value)
+
     def validate_username(self, value: str) -> str:
         normalized = value.strip()
         queryset = User.objects.filter(username__iexact=normalized)

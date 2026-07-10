@@ -185,6 +185,33 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(duplicate_response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("user with this email already exists", str(duplicate_response.data))
 
+    def test_user_create_normalizes_profile_text_fields(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "profile-normalized",
+                "email": "profile-normalized@example.com",
+                "first_name": "  Profile  ",
+                "last_name": "  Normalized  ",
+                "title": "  Operations Lead  ",
+                "phone_number": "  +1-555-0100  ",
+                "org_unit": self.operations.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+                "is_staff": False,
+            },
+            format="multipart",
+        )
+
+        user = User.objects.get(username="profile-normalized")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(user.first_name, "Profile")
+        self.assertEqual(user.last_name, "Normalized")
+        self.assertEqual(user.title, "Operations Lead")
+        self.assertEqual(user.phone_number, "+1-555-0100")
+
     def test_user_create_rejects_case_insensitive_username_duplicates(self):
         self.client.force_authenticate(user=self.admin_user)
 
