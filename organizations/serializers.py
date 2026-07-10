@@ -52,6 +52,12 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An organization unit with this code already exists.")
         return normalized
 
+    def validate_name(self, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise serializers.ValidationError("Organization unit name is required.")
+        return normalized
+
     def validate_parent(self, parent: OrganizationUnit | None) -> OrganizationUnit | None:
         if parent is None or self.instance is None:
             return parent

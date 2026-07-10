@@ -95,7 +95,7 @@ class OrganizationScopingTests(APITestCase):
 
         create_response = self.client.post(
             reverse("org-unit-list"),
-            {"name": "Security Operations", "code": " secops "},
+            {"name": "  Security Operations  ", "code": " secops "},
             format="multipart",
         )
         duplicate_response = self.client.post(
@@ -108,6 +108,19 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(OrganizationUnit.objects.get(name="Security Operations").code, "SECOPS")
         self.assertEqual(duplicate_response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("organization unit with this code already exists", str(duplicate_response.data))
+
+    def test_org_unit_create_rejects_blank_name_after_normalization(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "   ", "code": "BLANKNAME"},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(OrganizationUnit.objects.filter(code="BLANKNAME").exists())
+        self.assertIn("may not be blank", str(response.data))
 
     def test_org_csv_import_rejects_parent_cycles_without_writing_rows(self):
         self.client.force_authenticate(user=self.admin_user)
