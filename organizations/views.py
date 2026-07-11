@@ -48,7 +48,12 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def tree(self, request):
-        roots = self.get_queryset().filter(parent__isnull=True)
+        if request.user.is_admin_role():
+            roots = self.get_queryset().filter(parent__isnull=True)
+        elif request.user.org_unit_id:
+            roots = self.get_queryset().filter(id=request.user.org_unit_id)
+        else:
+            roots = self.get_queryset().none()
         serializer = self.get_serializer(roots, many=True)
         return Response(serializer.data)
 

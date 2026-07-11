@@ -34,6 +34,12 @@ class OrganizationScopingTests(APITestCase):
             [cls.manager_role],
             org_unit=cls.operations,
         )
+        cls.child_manager_user = cls.create_user(
+            "child-manager",
+            "child-manager@example.com",
+            [cls.manager_role],
+            org_unit=cls.customer_success,
+        )
 
     @classmethod
     def create_user(cls, username, email, roles, org_unit=None):
@@ -64,6 +70,16 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["code"], "OPS")
         self.assertEqual(response.data[0]["children"], [{"id": self.customer_success.id, "name": "Customer Success", "code": "CS"}])
+
+    def test_tree_action_uses_manager_org_as_branch_root_when_org_has_parent(self):
+        self.client.force_authenticate(user=self.child_manager_user)
+
+        response = self.client.get(reverse("org-unit-tree"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["code"], "CS")
+        self.assertEqual(response.data[0]["parent"], self.operations.id)
 
     def test_org_unit_update_rejects_descendant_as_parent(self):
         self.client.force_authenticate(user=self.admin_user)
