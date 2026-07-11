@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
+from accounts.models import User
 from accounts.permissions import IsAdminOrManager
 from audits.utils import create_audit_log
 
@@ -63,9 +64,9 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="org-units-export.csv"'
         writer = csv.writer(response)
-        writer.writerow(["name", "code", "parent_code"])
+        writer.writerow(["name", "code", "parent_code", "manager_username"])
         for unit in queryset:
-            writer.writerow([unit.name, unit.code, unit.parent.code if unit.parent else ""])
+            writer.writerow([unit.name, unit.code, unit.parent.code if unit.parent else "", unit.manager.username if unit.manager else ""])
         create_audit_log(request, "exported", OrganizationUnit, {"record_count": queryset.count()})
         return response
 
@@ -93,7 +94,7 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
             for prepared in prepared_rows:
                 unit, _ = OrganizationUnit.objects.update_or_create(
                     code=prepared["code"],
-                    defaults={"name": prepared["name"], "parent": None},
+                    defaults={"name": prepared["name"], "parent": None, "manager": prepared["manager"]},
                 )
                 prepared["unit"] = unit
                 processed += 1
@@ -124,6 +125,8 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
             name = (row.get("name") or "").strip()
             code = (row.get("code") or "").strip().upper()
             parent_code = (row.get("parent_code") or "").strip().upper()
+            manager_username = (row.get("manager_username") or "").strip()
+            manager = None
 
             if not name:
                 errors.append({"row": row_number, "field": "name", "detail": "Name is required."})
@@ -137,6 +140,12 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
                 errors.append({"row": row_number, "field": "parent_code", "detail": "An organization unit cannot be its own parent."})
             if parent_code and parent_code not in existing_units and parent_code not in incoming_codes:
                 errors.append({"row": row_number, "field": "parent_code", "detail": f"Unknown parent organization unit `{parent_code}`."})
+            if manager_username:
+                manager = User.objects.filter(username__iexact=manager_username).first()
+                if not manager:
+                    errors.append({"row": row_number, "field": "manager_username", "detail": f"Unknown manager username `{manager_username}`."})
+                elif not manager.is_manager_role():
+                    errors.append({"row": row_number, "field": "manager_username", "detail": "Manager must have the admin or manager role."})
             if manager_mode:
                 if not operator_org_code:
                     errors.append({"row": row_number, "field": "parent_code", "detail": "Manager must belong to an organization unit."})
@@ -149,7 +158,7 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
                         }
                     )
 
-            prepared_rows.append({"name": name, "code": code, "parent_code": parent_code})
+            prepared_rows.append({"name": name, "code": code, "parent_code": parent_code, "manager": manager})
 
         parent_by_code = {row["code"]: row["parent_code"] for row in prepared_rows if row["code"]}
         for row_number, prepared in enumerate(prepared_rows, start=2):

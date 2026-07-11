@@ -212,3 +212,32 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["processed"], 2)
         self.assertEqual(OrganizationUnit.objects.get(code="APPSEC").parent.code, "SEC")
+
+    def test_org_csv_import_sets_manager_by_username(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code,manager_username\n"
+                "Managed Support,MSUP,OPS,manager\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        unit = OrganizationUnit.objects.get(code="MSUP")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(unit.manager, self.manager_user)
+
+    def test_org_export_includes_manager_username(self):
+        self.customer_success.manager = self.manager_user
+        self.customer_success.save(update_fields=["manager"])
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.get(reverse("org-unit-export-units"))
+
+        exported_csv = response.content.decode("utf-8")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("name,code,parent_code,manager_username", exported_csv)
+        self.assertIn("Customer Success,CS,OPS,manager", exported_csv)
