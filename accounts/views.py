@@ -83,7 +83,7 @@ class UserViewSet(viewsets.ModelViewSet):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="users-export.csv"'
         writer = csv.writer(response)
-        writer.writerow(["username", "email", "first_name", "last_name", "title", "org_unit_code", "role_slugs"])
+        writer.writerow(["username", "email", "first_name", "last_name", "title", "phone_number", "org_unit_code", "role_slugs"])
         for user in queryset:
             writer.writerow(
                 [
@@ -92,6 +92,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     user.first_name,
                     user.last_name,
                     user.title,
+                    user.phone_number,
                     user.org_unit.code if user.org_unit else "",
                     ",".join(user.role_slugs),
                 ]
@@ -128,6 +129,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     "first_name": prepared["first_name"],
                     "last_name": prepared["last_name"],
                     "title": prepared["title"],
+                    "phone_number": prepared["phone_number"],
                     "org_unit": prepared["org_unit"],
                 }
                 if user:
@@ -218,6 +220,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     "first_name": (row.get("first_name") or "").strip(),
                     "last_name": (row.get("last_name") or "").strip(),
                     "title": (row.get("title") or "").strip(),
+                    "phone_number": (row.get("phone_number") or "").strip(),
                     "org_unit": org_unit,
                     "roles": roles,
                 }

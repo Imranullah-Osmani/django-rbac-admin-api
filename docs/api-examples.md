@@ -49,9 +49,9 @@ curl -s -X POST http://localhost:8010/api/users/import/ \
 Expected CSV shape:
 
 ```csv
-username,email,first_name,last_name,title,org_unit_code,role_slugs
-ops.manager,ops.manager@example.com,Ops,Manager,Operations Lead,OPS,manager
-support.staff,support.staff@example.com,Support,Staff,Support Specialist,SUP,staff
+username,email,first_name,last_name,title,phone_number,org_unit_code,role_slugs
+ops.manager,ops.manager@example.com,Ops,Manager,Operations Lead,+1-555-0101,OPS,manager
+support.staff,support.staff@example.com,Support,Staff,Support Specialist,+1-555-0102,SUP,staff
 ```
 
 ## 6. Read the organization tree
@@ -61,4 +61,4 @@ curl -s http://localhost:8010/api/org-units/tree/ \
   -H "Authorization: Bearer <access-token>"
 ```
 
-This endpoint is useful for showing organization hierarchy and manager-scoped visibility in one response.
+This endpoint is useful for showing organization hierarchy and manager-scoped visibility in one response. For managers assigned to a child organization, their own organization is returned as the branch root.

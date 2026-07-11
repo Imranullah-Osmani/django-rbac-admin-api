@@ -335,8 +335,8 @@ class RBACAccessTests(APITestCase):
         upload = SimpleUploadedFile(
             "users.csv",
             (
-                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
-                "bulk-staff,bulk-staff@example.com,Bulk,Staff,Analyst,OPS,staff\n"
+                "username,email,first_name,last_name,title,phone_number,org_unit_code,role_slugs\n"
+                "bulk-staff,bulk-staff@example.com,Bulk,Staff,Analyst,+1-555-0101,OPS,staff\n"
             ).encode("utf-8"),
             content_type="text/csv",
         )
@@ -344,7 +344,8 @@ class RBACAccessTests(APITestCase):
         response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(User.objects.filter(email="bulk-staff@example.com").exists())
+        imported_user = User.objects.get(email="bulk-staff@example.com")
+        self.assertEqual(imported_user.phone_number, "+1-555-0101")
         audit_log = AuditLog.objects.get(action="imported", target_model="User")
         self.assertEqual(audit_log.actor, self.admin_user)
         self.assertEqual(audit_log.changes, {"record_count": 1})
@@ -473,6 +474,8 @@ class RBACAccessTests(APITestCase):
         response = self.client.get(reverse("user-export-users"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        exported_csv = response.content.decode("utf-8")
+        self.assertIn("username,email,first_name,last_name,title,phone_number,org_unit_code,role_slugs", exported_csv)
         audit_log = AuditLog.objects.get(action="exported", target_model="User")
         self.assertEqual(audit_log.actor, self.manager_user)
         self.assertEqual(audit_log.changes, {"record_count": 2})

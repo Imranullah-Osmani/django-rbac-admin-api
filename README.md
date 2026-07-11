@@ -105,9 +105,9 @@ See [docs/api-examples.md](docs/api-examples.md) for curl examples covering logi
 ## Sample import shapes
 
 ```csv
-username,email,first_name,last_name,title,org_unit_code,role_slugs
-jane.ops,jane@example.com,Jane,Osman,Operations Lead,OPS,"manager"
-amir.staff,amir@example.com,Amir,Rahimi,Support Specialist,OPS,"staff"
+username,email,first_name,last_name,title,phone_number,org_unit_code,role_slugs
+jane.ops,jane@example.com,Jane,Osman,Operations Lead,+1-555-0101,OPS,"manager"
+amir.staff,amir@example.com,Amir,Rahimi,Support Specialist,+1-555-0102,OPS,"staff"
 ```
 
 ```csv
