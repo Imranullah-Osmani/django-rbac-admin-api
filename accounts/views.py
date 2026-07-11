@@ -49,7 +49,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrManager]
     parser_classes = [MultiPartParser]
-    search_fields = ("username", "email", "first_name", "last_name")
+    search_fields = ("username", "email", "first_name", "last_name", "title", "phone_number", "org_unit__name", "org_unit__code")
     ordering_fields = ("username", "email", "date_joined")
 
     def get_queryset(self):

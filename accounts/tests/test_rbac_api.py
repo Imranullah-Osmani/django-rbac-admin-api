@@ -102,6 +102,20 @@ class RBACAccessTests(APITestCase):
         visible_usernames = {item["username"] for item in response.data["results"]}
         self.assertEqual(visible_usernames, {"manager", "ops-staff"})
 
+    def test_admin_can_search_users_by_operational_profile_fields(self):
+        self.same_org_staff.title = "Escalation Coordinator"
+        self.same_org_staff.phone_number = "+1-555-0199"
+        self.same_org_staff.save(update_fields=["title", "phone_number"])
+        self.client.force_authenticate(user=self.admin_user)
+
+        title_response = self.client.get(reverse("user-list"), {"search": "escalation"})
+        phone_response = self.client.get(reverse("user-list"), {"search": "0199"})
+        org_response = self.client.get(reverse("user-list"), {"search": "OPS"})
+
+        self.assertEqual([item["username"] for item in title_response.data["results"]], ["ops-staff"])
+        self.assertEqual([item["username"] for item in phone_response.data["results"]], ["ops-staff"])
+        self.assertIn("ops-staff", {item["username"] for item in org_response.data["results"]})
+
     def test_manager_cannot_assign_admin_role(self):
         self.client.force_authenticate(user=self.manager_user)
 
