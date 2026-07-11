@@ -111,9 +111,9 @@ amir.staff,amir@example.com,Amir,Rahimi,Support Specialist,+1-555-0102,OPS,"staf
 ```
 
 ```csv
-name,code,parent_code
-Operations,OPS,
-Customer Success,CS,OPS
+name,code,parent_code,manager_username
+Operations,OPS,,jane.ops
+Customer Success,CS,OPS,jane.ops
 ```
 
 ## Case study

@@ -54,6 +54,13 @@ ops.manager,ops.manager@example.com,Ops,Manager,Operations Lead,+1-555-0101,OPS,
 support.staff,support.staff@example.com,Support,Staff,Support Specialist,+1-555-0102,SUP,staff
 ```
 
+Organization import/export also supports manager ownership:
+
+```csv
+name,code,parent_code,manager_username
+Support Operations,SUP,OPS,ops.manager
+```
+
 ## 6. Read the organization tree
 
 ```bash
