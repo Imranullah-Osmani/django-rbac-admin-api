@@ -286,6 +286,15 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(User.objects.filter(username="security-user").exists())
 
+    def test_operator_cannot_delete_own_account(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.delete(reverse("user-detail", args=[self.admin_user.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(User.objects.filter(id=self.admin_user.id).exists())
+        self.assertIn("cannot delete their own user account", str(response.data))
+
     def test_manager_csv_import_cannot_bypass_org_scope_or_admin_role(self):
         self.client.force_authenticate(user=self.manager_user)
         upload = SimpleUploadedFile(

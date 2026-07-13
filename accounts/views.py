@@ -73,6 +73,15 @@ class UserViewSet(viewsets.ModelViewSet):
         user = serializer.save()
         create_audit_log(self.request, "updated", user, {"roles": user.role_slugs})
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.pk == request.user.pk:
+            return Response(
+                {"detail": "Operators cannot delete their own user account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
     def perform_destroy(self, instance) -> None:
         create_audit_log(self.request, "deleted", instance, {"username": instance.username})
         instance.delete()
