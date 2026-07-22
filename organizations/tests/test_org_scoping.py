@@ -93,6 +93,16 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("descendants as parent", str(response.data))
 
+    def test_org_unit_delete_rejects_units_with_children(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.delete(reverse("org-unit-detail", args=[self.operations.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(OrganizationUnit.objects.filter(id=self.operations.id).exists())
+        self.assertTrue(OrganizationUnit.objects.filter(id=self.customer_success.id).exists())
+        self.assertIn("child organization units", str(response.data))
+
     def test_manager_cannot_create_org_unit_outside_own_branch(self):
         self.client.force_authenticate(user=self.manager_user)
 

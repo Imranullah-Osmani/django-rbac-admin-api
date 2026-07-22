@@ -43,6 +43,15 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
         unit = serializer.save()
         create_audit_log(self.request, "updated", unit, {"parent": unit.parent_id})
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.children.exists():
+            return Response(
+                {"detail": "Move or delete child organization units before deleting this unit."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
     def perform_destroy(self, instance) -> None:
         create_audit_log(self.request, "deleted", instance, {"code": instance.code})
         instance.delete()
