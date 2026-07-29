@@ -559,6 +559,26 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([item["actor_email"] for item in response.data["results"]], ["manager@example.com"])
 
+    def test_admin_can_filter_audit_logs_by_request_metadata(self):
+        self.client.force_authenticate(user=self.admin_user)
+        AuditLog.objects.create(
+            actor=self.admin_user,
+            action="imported",
+            target_model="User",
+            metadata={"method": "POST", "path": "/api/users/import/"},
+        )
+        AuditLog.objects.create(
+            actor=self.admin_user,
+            action="exported",
+            target_model="User",
+            metadata={"method": "GET", "path": "/api/users/export/"},
+        )
+
+        response = self.client.get(reverse("audit-log-list"), {"method": "post", "path": "import"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([item["action"] for item in response.data["results"]], ["imported"])
+
     def test_blank_audit_log_filters_are_ignored(self):
         self.client.force_authenticate(user=self.admin_user)
         first = AuditLog.objects.create(actor=self.admin_user, action="created", target_model="User")
