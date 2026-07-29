@@ -21,7 +21,7 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationUnitSerializer
     permission_classes = [IsAdminOrManager]
     parser_classes = [MultiPartParser]
-    search_fields = ("name", "code")
+    search_fields = ("name", "code", "manager__username", "manager__email")
     ordering_fields = ("name", "code", "updated_at")
 
     def get_queryset(self):

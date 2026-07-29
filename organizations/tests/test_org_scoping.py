@@ -61,6 +61,16 @@ class OrganizationScopingTests(APITestCase):
         visible_codes = {item["code"] for item in response.data["results"]}
         self.assertEqual(visible_codes, {"OPS", "CS"})
 
+    def test_admin_can_search_org_units_by_manager_identity(self):
+        self.customer_success.manager = self.manager_user
+        self.customer_success.save(update_fields=["manager", "updated_at"])
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.get(reverse("org-unit-list"), {"search": "manager@example.com"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([item["code"] for item in response.data["results"]], ["CS"])
+
     def test_tree_action_returns_only_scoped_branch_for_manager(self):
         self.client.force_authenticate(user=self.manager_user)
 
