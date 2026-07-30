@@ -23,6 +23,7 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser]
     search_fields = ("name", "code", "manager__username", "manager__email")
     ordering_fields = ("name", "code", "updated_at")
+    ordering = ("code",)
 
     def get_queryset(self):
         queryset = super().get_queryset()

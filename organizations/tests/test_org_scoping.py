@@ -261,3 +261,11 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("name,code,parent_code,manager_username", exported_csv)
         self.assertIn("Customer Success,CS,OPS,manager", exported_csv)
+
+    def test_org_export_uses_stable_code_ordering(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.get(reverse("org-unit-export-units"))
+
+        exported_rows = response.content.decode("utf-8").splitlines()
+        self.assertEqual([row.split(",")[1] for row in exported_rows[1:]], ["CS", "FIN", "OPS"])
