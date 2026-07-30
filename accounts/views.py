@@ -53,6 +53,7 @@ class UserViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser]
     search_fields = ("username", "email", "first_name", "last_name", "title", "phone_number", "org_unit__name", "org_unit__code")
     ordering_fields = ("username", "email", "date_joined")
+    ordering = ("username",)
 
     def get_queryset(self):
         queryset = super().get_queryset()

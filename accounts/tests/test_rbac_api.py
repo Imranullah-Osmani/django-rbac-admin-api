@@ -523,6 +523,15 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(audit_log.metadata["method"], "GET")
         self.assertEqual(audit_log.metadata["path"], reverse("user-export-users"))
 
+    def test_user_export_uses_stable_username_ordering(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.get(reverse("user-export-users"))
+
+        exported_rows = response.content.decode("utf-8").splitlines()
+        self.assertEqual(exported_rows[1].split(",")[0], "manager")
+        self.assertEqual(exported_rows[2].split(",")[0], "ops-staff")
+
     def test_admin_can_search_audit_logs_for_operational_events(self):
         self.client.force_authenticate(user=self.admin_user)
         AuditLog.objects.create(
