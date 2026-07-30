@@ -196,6 +196,15 @@ class OrganizationScopingTests(APITestCase):
         self.assertFalse(OrganizationUnit.objects.filter(code="SEC").exists())
         self.assertIn("Duplicate code also appears on row 2.", str(response.data))
 
+    def test_org_csv_import_rejects_non_utf8_upload_without_server_error(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile("org-units.csv", b"\xff\xfe\x00\x00", content_type="text/csv")
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], "Upload must be a UTF-8 encoded CSV file.")
+
     def test_manager_org_csv_import_cannot_create_units_outside_own_branch(self):
         self.client.force_authenticate(user=self.manager_user)
         upload = SimpleUploadedFile(
