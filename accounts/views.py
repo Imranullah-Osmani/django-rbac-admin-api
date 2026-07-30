@@ -1,6 +1,8 @@
 import csv
 
 from django.contrib.auth.models import Permission
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import transaction
 from django.http import HttpResponse
 from rest_framework import mixins, status, viewsets
@@ -191,16 +193,21 @@ class UserViewSet(viewsets.ModelViewSet):
                     )
             if not email:
                 errors.append({"row": row_number, "field": "email", "detail": "Email is required."})
-            elif email in seen_emails:
-                errors.append(
-                    {
-                        "row": row_number,
-                        "field": "email",
-                        "detail": f"Duplicate email also appears on row {seen_emails[email]}.",
-                    }
-                )
             else:
-                seen_emails[email] = row_number
+                try:
+                    validate_email(email)
+                except ValidationError:
+                    errors.append({"row": row_number, "field": "email", "detail": "Enter a valid email address."})
+                if email in seen_emails:
+                    errors.append(
+                        {
+                            "row": row_number,
+                            "field": "email",
+                            "detail": f"Duplicate email also appears on row {seen_emails[email]}.",
+                        }
+                    )
+                else:
+                    seen_emails[email] = row_number
 
             org_unit = None
             if org_code:
