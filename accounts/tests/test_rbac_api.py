@@ -352,6 +352,15 @@ class RBACAccessTests(APITestCase):
         self.assertFalse(User.objects.filter(username="invalid-email").exists())
         self.assertIn("Enter a valid email address.", str(response.data))
 
+    def test_csv_import_rejects_non_utf8_upload_without_server_error(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile("users.csv", b"\xff\xfe\x00\x00", content_type="text/csv")
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], "Upload must be a UTF-8 encoded CSV file.")
+
     def test_csv_import_rejects_non_system_role_slug(self):
         self.client.force_authenticate(user=self.admin_user)
         Role.objects.create(name="Security", slug="security", description="Non-system role.")

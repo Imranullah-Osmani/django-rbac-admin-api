@@ -118,7 +118,12 @@ class UserViewSet(viewsets.ModelViewSet):
         if not upload:
             return Response({"detail": "Upload a CSV file with form field `file`."}, status=status.HTTP_400_BAD_REQUEST)
 
-        reader = csv.DictReader(upload.read().decode("utf-8").splitlines())
+        try:
+            decoded_csv = upload.read().decode("utf-8-sig")
+        except UnicodeDecodeError:
+            return Response({"detail": "Upload must be a UTF-8 encoded CSV file."}, status=status.HTTP_400_BAD_REQUEST)
+
+        reader = csv.DictReader(decoded_csv.splitlines())
         missing_headers = {"username", "email"} - set(reader.fieldnames or [])
         if missing_headers:
             return Response(
