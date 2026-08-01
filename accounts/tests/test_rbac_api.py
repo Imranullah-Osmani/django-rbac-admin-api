@@ -263,6 +263,17 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(returned_slugs, {"admin", "manager", "staff"})
         self.assertEqual(create_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_non_system_role_data_drift_is_hidden_from_role_api(self):
+        self.staff_role.is_system = False
+        self.staff_role.save(update_fields=["is_system", "updated_at"])
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.get(reverse("role-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_slugs = {item["slug"] for item in response.data["results"]}
+        self.assertEqual(returned_slugs, {"admin", "manager"})
+
     def test_user_create_rejects_non_system_role_assignment(self):
         self.client.force_authenticate(user=self.admin_user)
         custom_role = Role.objects.create(name="Security", slug="security", description="Non-system role.")
@@ -285,6 +296,30 @@ class RBACAccessTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(User.objects.filter(username="security-user").exists())
+
+    def test_user_create_rejects_system_slug_role_when_not_marked_system(self):
+        self.client.force_authenticate(user=self.admin_user)
+        self.staff_role.is_system = False
+        self.staff_role.save(update_fields=["is_system", "updated_at"])
+
+        response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "drifted-role-user",
+                "email": "drifted-role-user@example.com",
+                "first_name": "Drifted",
+                "last_name": "Role",
+                "title": "Analyst",
+                "org_unit": self.operations.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+                "is_staff": False,
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(User.objects.filter(username="drifted-role-user").exists())
 
     def test_operator_cannot_delete_own_account(self):
         self.client.force_authenticate(user=self.admin_user)

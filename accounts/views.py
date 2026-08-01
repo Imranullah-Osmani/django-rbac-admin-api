@@ -34,7 +34,7 @@ class RoleViewSet(viewsets.ModelViewSet):
     ordering_fields = ("name", "updated_at")
 
     def get_queryset(self):
-        return super().get_queryset().filter(slug__in=["admin", "manager", "staff"])
+        return super().get_queryset().filter(slug__in=["admin", "manager", "staff"], is_system=True)
 
     def perform_update(self, serializer) -> None:
         role = serializer.save()
