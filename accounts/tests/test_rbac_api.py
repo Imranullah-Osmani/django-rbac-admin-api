@@ -102,6 +102,25 @@ class RBACAccessTests(APITestCase):
         visible_usernames = {item["username"] for item in response.data["results"]}
         self.assertEqual(visible_usernames, {"manager", "ops-staff"})
 
+    def test_non_system_role_drift_does_not_grant_manager_access(self):
+        self.manager_role.is_system = False
+        self.manager_role.save(update_fields=["is_system", "updated_at"])
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.get(reverse("user-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_non_system_roles_do_not_contribute_effective_permissions(self):
+        permission = self.manager_role.permissions.first()
+        self.same_org_staff.user_permissions.clear()
+        self.same_org_staff.roles.set([self.manager_role])
+        self.manager_role.is_system = False
+        self.manager_role.save(update_fields=["is_system", "updated_at"])
+
+        self.assertIsNotNone(permission)
+        self.assertNotIn(permission.codename, self.same_org_staff.effective_permissions())
+
     def test_admin_can_search_users_by_operational_profile_fields(self):
         self.same_org_staff.title = "Escalation Coordinator"
         self.same_org_staff.phone_number = "+1-555-0199"

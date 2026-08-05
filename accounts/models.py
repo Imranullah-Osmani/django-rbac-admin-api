@@ -51,10 +51,10 @@ class User(AbstractUser):
 
     @property
     def role_slugs(self) -> list[str]:
-        return list(self.roles.values_list("slug", flat=True))
+        return list(self.roles.filter(is_system=True).values_list("slug", flat=True))
 
     def has_role(self, slug: str) -> bool:
-        return slug in self.role_slugs
+        return self.roles.filter(slug=slug, is_system=True).exists()
 
     def has_internal_access(self) -> bool:
         return self.is_staff or self.is_superuser or bool(set(self.role_slugs) & {"admin", "manager", "staff"})
@@ -67,5 +67,5 @@ class User(AbstractUser):
 
     def effective_permissions(self) -> list[str]:
         built_in = set(self.user_permissions.values_list("codename", flat=True))
-        inherited = set(Permission.objects.filter(rbac_roles__users=self).values_list("codename", flat=True))
+        inherited = set(Permission.objects.filter(rbac_roles__users=self, rbac_roles__is_system=True).values_list("codename", flat=True))
         return sorted(built_in | inherited)
