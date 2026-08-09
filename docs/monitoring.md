@@ -7,6 +7,8 @@ This service exposes health endpoints and Docker health checks so the demo behav
 - `/health/live/` confirms the Django process is responding.
 - `/health/ready/` confirms the API can open a database connection.
 
+`/health/live/` should stay lightweight and only prove that the process can respond. `/health/ready/` is the traffic-gating check: it returns HTTP `200` when the database is reachable, and HTTP `503` with `"status": "degraded"` when the database check fails. Docker and uptime monitors should treat the `503` as "not ready for traffic" instead of hiding it behind a generic process check.
+
 ## Docker health checks
 
 Docker Compose checks:

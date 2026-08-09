@@ -37,7 +37,7 @@ Open:
 - `http://localhost:8010/` for the landing page
 - `http://localhost:8010/admin/` for Django admin
 - `http://localhost:8010/api/` for the browsable API
-- `http://localhost:8010/health/ready/` for database readiness
+- `http://localhost:8010/health/ready/` for database readiness; database failures return HTTP `503`
 
 Default admin credentials:
 
