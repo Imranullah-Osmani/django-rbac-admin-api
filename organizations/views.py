@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from accounts.models import User
@@ -20,7 +20,7 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
     queryset = OrganizationUnit.objects.select_related("parent", "manager").prefetch_related("children").all()
     serializer_class = OrganizationUnitSerializer
     permission_classes = [IsAdminOrManager]
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
     search_fields = ("name", "code", "manager__username", "manager__email")
     ordering_fields = ("name", "code", "updated_at")
     ordering = ("code",)

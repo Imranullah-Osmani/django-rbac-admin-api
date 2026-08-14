@@ -145,6 +145,18 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(duplicate_response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("organization unit with this code already exists", str(duplicate_response.data))
 
+    def test_org_unit_create_accepts_json_payloads(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "Platform Operations", "code": "PLATOPS", "parent": self.operations.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(OrganizationUnit.objects.filter(code="PLATOPS").exists())
+
     def test_org_unit_create_rejects_blank_name_after_normalization(self):
         self.client.force_authenticate(user=self.admin_user)
 

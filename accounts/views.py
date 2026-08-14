@@ -7,7 +7,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -50,7 +50,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.select_related("org_unit").prefetch_related("roles__permissions").all()
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrManager]
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
     search_fields = ("username", "email", "first_name", "last_name", "title", "phone_number", "org_unit__name", "org_unit__code")
     ordering_fields = ("username", "email", "date_joined")
     ordering = ("username",)

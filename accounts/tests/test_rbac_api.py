@@ -245,6 +245,27 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(user.title, "Operations Lead")
         self.assertEqual(user.phone_number, "+1-555-0100")
 
+    def test_user_create_accepts_json_payloads(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "json-user",
+                "email": "json-user@example.com",
+                "first_name": "Json",
+                "last_name": "User",
+                "title": "API Operator",
+                "org_unit": self.operations.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(username="json-user").exists())
+
     def test_user_create_rejects_case_insensitive_username_duplicates(self):
         self.client.force_authenticate(user=self.admin_user)
 
