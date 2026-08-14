@@ -45,3 +45,4 @@ The script validates Docker Compose configuration, Django system checks, migrati
 - Manage Django staff/admin-console access outside the public user API; user create and update payloads cannot set the `is_staff` flag.
 - Keep Dependabot alerts and GitHub Actions failures visible and triaged.
 - Review audit logs around bulk import/export workflows because those paths can change many records quickly.
+- CSV exports escape spreadsheet-formula prefixes before writing operator-controlled text fields.

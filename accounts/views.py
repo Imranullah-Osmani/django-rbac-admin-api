@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from audits.utils import create_audit_log
+from config.csv_export import safe_csv_row
 from organizations.models import OrganizationUnit
 
 from .models import Role, User
@@ -98,16 +99,18 @@ class UserViewSet(viewsets.ModelViewSet):
         writer.writerow(["username", "email", "first_name", "last_name", "title", "phone_number", "org_unit_code", "role_slugs"])
         for user in queryset:
             writer.writerow(
-                [
-                    user.username,
-                    user.email,
-                    user.first_name,
-                    user.last_name,
-                    user.title,
-                    user.phone_number,
-                    user.org_unit.code if user.org_unit else "",
-                    ",".join(user.role_slugs),
-                ]
+                safe_csv_row(
+                    [
+                        user.username,
+                        user.email,
+                        user.first_name,
+                        user.last_name,
+                        user.title,
+                        user.phone_number,
+                        user.org_unit.code if user.org_unit else "",
+                        ",".join(user.role_slugs),
+                    ]
+                )
             )
         create_audit_log(request, "exported", User, {"record_count": queryset.count()})
         return response

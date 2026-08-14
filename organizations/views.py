@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from accounts.models import User
 from accounts.permissions import IsAdminOrManager
 from audits.utils import create_audit_log
+from config.csv_export import safe_csv_row
 
 from .models import OrganizationUnit
 from .serializers import OrganizationUnitSerializer
@@ -76,7 +77,16 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
         writer = csv.writer(response)
         writer.writerow(["name", "code", "parent_code", "manager_username"])
         for unit in queryset:
-            writer.writerow([unit.name, unit.code, unit.parent.code if unit.parent else "", unit.manager.username if unit.manager else ""])
+            writer.writerow(
+                safe_csv_row(
+                    [
+                        unit.name,
+                        unit.code,
+                        unit.parent.code if unit.parent else "",
+                        unit.manager.username if unit.manager else "",
+                    ]
+                )
+            )
         create_audit_log(request, "exported", OrganizationUnit, {"record_count": queryset.count()})
         return response
 

@@ -639,6 +639,19 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(exported_rows[1].split(",")[0], "manager")
         self.assertEqual(exported_rows[2].split(",")[0], "ops-staff")
 
+    def test_user_export_escapes_spreadsheet_formula_cells(self):
+        self.same_org_staff.first_name = "=cmd"
+        self.same_org_staff.title = "@payload"
+        self.same_org_staff.save(update_fields=["first_name", "title"])
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.get(reverse("user-export-users"))
+
+        exported_csv = response.content.decode("utf-8")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("'=cmd", exported_csv)
+        self.assertIn("'@payload", exported_csv)
+
     def test_admin_can_search_audit_logs_for_operational_events(self):
         self.client.force_authenticate(user=self.admin_user)
         AuditLog.objects.create(

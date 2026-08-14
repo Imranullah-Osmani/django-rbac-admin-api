@@ -290,3 +290,14 @@ class OrganizationScopingTests(APITestCase):
 
         exported_rows = response.content.decode("utf-8").splitlines()
         self.assertEqual([row.split(",")[1] for row in exported_rows[1:]], ["CS", "FIN", "OPS"])
+
+    def test_org_export_escapes_spreadsheet_formula_cells(self):
+        self.customer_success.name = "=Customer Success"
+        self.customer_success.save(update_fields=["name", "updated_at"])
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.get(reverse("org-unit-export-units"))
+
+        exported_csv = response.content.decode("utf-8")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("'=Customer Success", exported_csv)
