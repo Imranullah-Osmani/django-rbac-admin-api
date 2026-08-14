@@ -42,5 +42,6 @@ The script validates Docker Compose configuration, Django system checks, migrati
 - Never commit `.env`, local databases, logs, or generated secrets.
 - Rotate `SECRET_KEY` and admin credentials for any real deployment.
 - Replace demo passwords before exposing the service outside local development.
+- Manage Django staff/admin-console access outside the public user API; user create and update payloads cannot set the `is_staff` flag.
 - Keep Dependabot alerts and GitHub Actions failures visible and triaged.
 - Review audit logs around bulk import/export workflows because those paths can change many records quickly.

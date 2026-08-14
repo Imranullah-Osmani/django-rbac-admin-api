@@ -267,6 +267,29 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("user with this username already exists", str(response.data))
 
+    def test_user_api_does_not_allow_staff_flag_escalation(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        create_response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "staff-flag-attempt",
+                "email": "staff-flag-attempt@example.com",
+                "first_name": "Staff",
+                "last_name": "Attempt",
+                "title": "Analyst",
+                "org_unit": self.operations.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+                "is_staff": True,
+            },
+            format="multipart",
+        )
+
+        created_user = User.objects.get(username="staff-flag-attempt")
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(created_user.is_staff)
+
     def test_admin_sees_only_fixed_system_roles_and_cannot_create_new_ones(self):
         self.client.force_authenticate(user=self.admin_user)
 

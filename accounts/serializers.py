@@ -77,7 +77,7 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "effective_permissions",
         )
-        read_only_fields = ("date_joined",)
+        read_only_fields = ("is_staff", "date_joined")
 
     def get_effective_permissions(self, obj: User) -> list[str]:
         return obj.effective_permissions()
