@@ -13,6 +13,7 @@ from rest_framework.response import Response
 
 from audits.utils import create_audit_log
 from config.csv_export import safe_csv_row
+from config.csv_import import csv_import_too_large
 from organizations.models import OrganizationUnit
 
 from .models import Role, User
@@ -120,6 +121,8 @@ class UserViewSet(viewsets.ModelViewSet):
         upload = request.FILES.get("file")
         if not upload:
             return Response({"detail": "Upload a CSV file with form field `file`."}, status=status.HTTP_400_BAD_REQUEST)
+        if csv_import_too_large(upload):
+            return Response({"detail": "CSV import files must be 1 MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             decoded_csv = upload.read().decode("utf-8-sig")
