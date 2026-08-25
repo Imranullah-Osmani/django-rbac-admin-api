@@ -166,6 +166,21 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(OrganizationUnit.objects.filter(code="PLATOPS").exists())
 
+    def test_org_unit_rejects_staff_manager_assignment(self):
+        staff_role = Role.objects.get(slug="staff")
+        staff_user = self.create_user("staff-manager-attempt", "staff-manager-attempt@example.com", [staff_role], org_unit=self.operations)
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "Invalid Manager Unit", "code": "BADMGR", "manager": staff_user.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(OrganizationUnit.objects.filter(code="BADMGR").exists())
+        self.assertIn("Organization managers must be active admin or manager users.", str(response.data))
+
     def test_org_unit_create_rejects_blank_name_after_normalization(self):
         self.client.force_authenticate(user=self.admin_user)
 

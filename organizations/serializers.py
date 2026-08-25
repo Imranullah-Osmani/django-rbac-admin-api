@@ -58,6 +58,13 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Organization unit name is required.")
         return normalized
 
+    def validate_manager(self, manager):
+        if manager is None:
+            return manager
+        if not manager.is_active or not manager.is_manager_role():
+            raise serializers.ValidationError("Organization managers must be active admin or manager users.")
+        return manager
+
     def validate_parent(self, parent: OrganizationUnit | None) -> OrganizationUnit | None:
         if parent is None or self.instance is None:
             return parent
