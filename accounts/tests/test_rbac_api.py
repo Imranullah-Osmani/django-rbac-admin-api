@@ -266,6 +266,16 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(username="json-user").exists())
 
+    def test_operator_cannot_deactivate_own_account(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.patch(reverse("user-detail", args=[self.admin_user.id]), {"is_active": False}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.admin_user.refresh_from_db()
+        self.assertTrue(self.admin_user.is_active)
+        self.assertIn("Operators cannot deactivate their own user account.", str(response.data))
+
     def test_user_create_rejects_case_insensitive_username_duplicates(self):
         self.client.force_authenticate(user=self.admin_user)
 

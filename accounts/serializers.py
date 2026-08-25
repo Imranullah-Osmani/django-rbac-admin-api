@@ -127,6 +127,9 @@ class UserSerializer(serializers.ModelSerializer):
         org_unit = attrs.get("org_unit")
         operator = request.user
 
+        if self.instance and self.instance.pk == operator.pk and attrs.get("is_active") is False:
+            raise serializers.ValidationError("Operators cannot deactivate their own user account.")
+
         if operator.is_admin_role():
             return attrs
 
