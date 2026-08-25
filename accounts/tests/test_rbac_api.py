@@ -468,6 +468,23 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "CSV import files must be 1 MB or smaller.")
 
+    def test_csv_import_rejects_too_many_data_rows(self):
+        self.client.force_authenticate(user=self.admin_user)
+        rows = "\n".join(
+            f"user-{index},user-{index}@example.com,User,{index},Analyst,OPS,staff" for index in range(501)
+        )
+        upload = SimpleUploadedFile(
+            "users.csv",
+            f"username,email,first_name,last_name,title,org_unit_code,role_slugs\n{rows}\n".encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], "CSV import files can include at most 500 data rows.")
+        self.assertFalse(User.objects.filter(username="user-0").exists())
+
     def test_csv_import_rejects_non_system_role_slug(self):
         self.client.force_authenticate(user=self.admin_user)
         Role.objects.create(name="Security", slug="security", description="Non-system role.")

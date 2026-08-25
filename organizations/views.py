@@ -12,7 +12,7 @@ from accounts.models import User
 from accounts.permissions import IsAdminOrManager
 from audits.utils import create_audit_log
 from config.csv_export import safe_csv_row
-from config.csv_import import csv_import_too_large
+from config.csv_import import csv_import_has_too_many_rows, csv_import_too_large
 
 from .models import OrganizationUnit
 from .serializers import OrganizationUnitSerializer
@@ -113,6 +113,12 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
             )
 
         rows = list(reader)
+        if csv_import_has_too_many_rows(rows):
+            return Response(
+                {"detail": "CSV import files can include at most 500 data rows."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         errors, prepared_rows = self._prepare_org_import_rows(rows)
         if errors:
             return Response({"processed": 0, "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
