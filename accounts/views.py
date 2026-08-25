@@ -85,6 +85,11 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"detail": "Operators cannot delete their own user account."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if instance.has_role("admin") and not User.objects.filter(roles__slug="admin", roles__is_system=True).exclude(pk=instance.pk).exists():
+            return Response(
+                {"detail": "At least one admin user must remain active in the system."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return super().destroy(request, *args, **kwargs)
 
     def perform_destroy(self, instance) -> None:
