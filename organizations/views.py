@@ -48,6 +48,11 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        if request.user.org_unit_id == instance.id:
+            return Response(
+                {"detail": "Operators cannot delete their own organization unit."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if instance.children.exists():
             return Response(
                 {"detail": "Move or delete child organization units before deleting this unit."},

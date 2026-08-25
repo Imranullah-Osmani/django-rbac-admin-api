@@ -113,6 +113,15 @@ class OrganizationScopingTests(APITestCase):
         self.assertTrue(OrganizationUnit.objects.filter(id=self.customer_success.id).exists())
         self.assertIn("child organization units", str(response.data))
 
+    def test_operator_cannot_delete_own_org_unit(self):
+        self.client.force_authenticate(user=self.child_manager_user)
+
+        response = self.client.delete(reverse("org-unit-detail", args=[self.customer_success.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(OrganizationUnit.objects.filter(id=self.customer_success.id).exists())
+        self.assertIn("cannot delete their own organization unit", str(response.data))
+
     def test_manager_cannot_create_org_unit_outside_own_branch(self):
         self.client.force_authenticate(user=self.manager_user)
 
