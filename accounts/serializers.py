@@ -129,6 +129,13 @@ class UserSerializer(serializers.ModelSerializer):
 
         if self.instance and self.instance.pk == operator.pk and attrs.get("is_active") is False:
             raise serializers.ValidationError("Operators cannot deactivate their own user account.")
+        if (
+            self.instance
+            and self.instance.has_role("admin")
+            and attrs.get("is_active") is False
+            and not User.objects.filter(roles__slug="admin", roles__is_system=True, is_active=True).exclude(pk=self.instance.pk).exists()
+        ):
+            raise serializers.ValidationError("At least one active admin user must remain in the system.")
 
         if operator.is_admin_role():
             return attrs

@@ -415,7 +415,44 @@ class RBACAccessTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(User.objects.filter(id=self.admin_user.id).exists())
-        self.assertIn("At least one admin user must remain active", str(response.data))
+        self.assertIn("At least one active admin user must remain", str(response.data))
+
+    def test_inactive_admin_does_not_satisfy_last_admin_delete_guard(self):
+        inactive_admin = self.create_user(
+            username="inactive-admin",
+            email="inactive-admin@example.com",
+            password="ChangeMe123!",
+            roles=[self.admin_role],
+        )
+        inactive_admin.is_active = False
+        inactive_admin.save(update_fields=["is_active"])
+        superuser = User.objects.create_superuser(
+            username="root-delete-operator",
+            email="root-delete-operator@example.com",
+            password="ChangeMe123!",
+        )
+        self.client.force_authenticate(user=superuser)
+
+        response = self.client.delete(reverse("user-detail", args=[self.admin_user.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(User.objects.filter(id=self.admin_user.id).exists())
+        self.assertIn("At least one active admin user must remain", str(response.data))
+
+    def test_admin_cannot_deactivate_last_active_admin_account(self):
+        superuser = User.objects.create_superuser(
+            username="root-deactivate-operator",
+            email="root-deactivate-operator@example.com",
+            password="ChangeMe123!",
+        )
+        self.client.force_authenticate(user=superuser)
+
+        response = self.client.patch(reverse("user-detail", args=[self.admin_user.id]), {"is_active": False}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.admin_user.refresh_from_db()
+        self.assertTrue(self.admin_user.is_active)
+        self.assertIn("At least one active admin user must remain", str(response.data))
 
     def test_manager_csv_import_cannot_bypass_org_scope_or_admin_role(self):
         self.client.force_authenticate(user=self.manager_user)
