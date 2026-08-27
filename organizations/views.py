@@ -183,8 +183,8 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
                 manager = User.objects.filter(username__iexact=manager_username).first()
                 if not manager:
                     errors.append({"row": row_number, "field": "manager_username", "detail": f"Unknown manager username `{manager_username}`."})
-                elif not manager.is_manager_role():
-                    errors.append({"row": row_number, "field": "manager_username", "detail": "Manager must have the admin or manager role."})
+                elif not manager.is_active or not manager.is_manager_role():
+                    errors.append({"row": row_number, "field": "manager_username", "detail": "Manager must be an active admin or manager user."})
             if manager_mode:
                 if not operator_org_code:
                     errors.append({"row": row_number, "field": "parent_code", "detail": "Manager must belong to an organization unit."})

@@ -319,6 +319,26 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(unit.manager, self.manager_user)
 
+    def test_org_csv_import_rejects_inactive_manager_username(self):
+        self.manager_user.is_active = False
+        self.manager_user.save(update_fields=["is_active"])
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code,manager_username\n"
+                "Inactive Managed Support,IMSUP,OPS,manager\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertFalse(OrganizationUnit.objects.filter(code="IMSUP").exists())
+        self.assertIn("Manager must be an active admin or manager user.", str(response.data))
+
     def test_org_export_includes_manager_username(self):
         self.customer_success.manager = self.manager_user
         self.customer_success.save(update_fields=["manager"])
