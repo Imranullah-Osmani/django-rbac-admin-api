@@ -136,6 +136,14 @@ class UserSerializer(serializers.ModelSerializer):
             and not User.objects.filter(roles__slug="admin", roles__is_system=True, is_active=True).exclude(pk=self.instance.pk).exists()
         ):
             raise serializers.ValidationError("At least one active admin user must remain in the system.")
+        if (
+            self.instance
+            and self.instance.has_role("admin")
+            and roles is not None
+            and not any(role.slug == "admin" for role in roles)
+            and not User.objects.filter(roles__slug="admin", roles__is_system=True, is_active=True).exclude(pk=self.instance.pk).exists()
+        ):
+            raise serializers.ValidationError("At least one active admin user must retain the admin role.")
 
         if operator.is_admin_role():
             return attrs

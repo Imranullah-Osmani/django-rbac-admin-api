@@ -454,6 +454,21 @@ class RBACAccessTests(APITestCase):
         self.assertTrue(self.admin_user.is_active)
         self.assertIn("At least one active admin user must remain", str(response.data))
 
+    def test_admin_cannot_remove_role_from_last_active_admin_account(self):
+        superuser = User.objects.create_superuser(
+            username="root-role-operator",
+            email="root-role-operator@example.com",
+            password="ChangeMe123!",
+        )
+        self.client.force_authenticate(user=superuser)
+
+        response = self.client.patch(reverse("user-detail", args=[self.admin_user.id]), {"role_ids": [self.staff_role.id]}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.admin_user.refresh_from_db()
+        self.assertEqual(self.admin_user.role_slugs, ["admin"])
+        self.assertIn("At least one active admin user must retain the admin role", str(response.data))
+
     def test_manager_csv_import_cannot_bypass_org_scope_or_admin_role(self):
         self.client.force_authenticate(user=self.manager_user)
         upload = SimpleUploadedFile(
