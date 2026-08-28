@@ -25,6 +25,11 @@ class OrganizationScopingTests(APITestCase):
             code="CS",
             parent=cls.operations,
         )
+        cls.enterprise_support = OrganizationUnit.objects.create(
+            name="Enterprise Support",
+            code="ENT",
+            parent=cls.customer_success,
+        )
         cls.finance = OrganizationUnit.objects.create(name="Finance", code="FIN")
 
         cls.admin_user = cls.create_user("admin", "admin@example.com", [cls.admin_role])
@@ -52,14 +57,14 @@ class OrganizationScopingTests(APITestCase):
         user.roles.set(roles)
         return user
 
-    def test_manager_only_sees_own_and_child_org_units(self):
+    def test_manager_only_sees_own_org_branch(self):
         self.client.force_authenticate(user=self.manager_user)
 
         response = self.client.get(reverse("org-unit-list"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         visible_codes = {item["code"] for item in response.data["results"]}
-        self.assertEqual(visible_codes, {"OPS", "CS"})
+        self.assertEqual(visible_codes, {"OPS", "CS", "ENT"})
 
     def test_admin_can_search_org_units_by_manager_identity(self):
         self.customer_success.manager = self.manager_user
@@ -357,7 +362,7 @@ class OrganizationScopingTests(APITestCase):
         response = self.client.get(reverse("org-unit-export-units"))
 
         exported_rows = response.content.decode("utf-8").splitlines()
-        self.assertEqual([row.split(",")[1] for row in exported_rows[1:]], ["CS", "FIN", "OPS"])
+        self.assertEqual([row.split(",")[1] for row in exported_rows[1:]], ["CS", "ENT", "FIN", "OPS"])
 
     def test_org_export_escapes_spreadsheet_formula_cells(self):
         self.customer_success.name = "=Customer Success"

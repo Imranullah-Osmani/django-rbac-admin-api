@@ -1,7 +1,6 @@
 import csv
 
 from django.db import transaction
-from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -15,6 +14,7 @@ from config.csv_export import safe_csv_row
 from config.csv_import import csv_import_has_too_many_rows, csv_import_too_large
 
 from .models import OrganizationUnit
+from .scoping import organization_branch_ids
 from .serializers import OrganizationUnitSerializer
 
 
@@ -35,7 +35,7 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
         if user.is_admin_role():
             return queryset
         if user.org_unit_id:
-            return queryset.filter(Q(id=user.org_unit_id) | Q(parent_id=user.org_unit_id))
+            return queryset.filter(id__in=organization_branch_ids(user.org_unit_id))
         return queryset.none()
 
     def perform_create(self, serializer) -> None:
