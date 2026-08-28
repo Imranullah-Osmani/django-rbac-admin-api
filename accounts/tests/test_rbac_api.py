@@ -27,6 +27,11 @@ class RBACAccessTests(APITestCase):
             code="CS",
             parent=cls.operations,
         )
+        cls.enterprise_support = OrganizationUnit.objects.create(
+            name="Enterprise Support",
+            code="ENT",
+            parent=cls.customer_success,
+        )
         cls.finance = OrganizationUnit.objects.create(name="Finance", code="FIN")
 
         cls.admin_user = cls.create_user(
@@ -54,6 +59,13 @@ class RBACAccessTests(APITestCase):
             email="child-staff@example.com",
             password="ChangeMe123!",
             org_unit=cls.customer_success,
+            roles=[cls.staff_role],
+        )
+        cls.descendant_org_staff = cls.create_user(
+            username="enterprise-staff",
+            email="enterprise-staff@example.com",
+            password="ChangeMe123!",
+            org_unit=cls.enterprise_support,
             roles=[cls.staff_role],
         )
         cls.other_org_staff = cls.create_user(
@@ -93,14 +105,14 @@ class RBACAccessTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_manager_only_sees_users_in_own_org_unit(self):
+    def test_manager_only_sees_users_in_own_org_branch(self):
         self.client.force_authenticate(user=self.manager_user)
 
         response = self.client.get(reverse("user-list"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         visible_usernames = {item["username"] for item in response.data["results"]}
-        self.assertEqual(visible_usernames, {"manager", "ops-staff"})
+        self.assertEqual(visible_usernames, {"manager", "ops-staff", "child-staff", "enterprise-staff"})
 
     def test_non_system_role_drift_does_not_grant_manager_access(self):
         self.manager_role.is_system = False
@@ -728,7 +740,7 @@ class RBACAccessTests(APITestCase):
         self.assertIn("username,email,first_name,last_name,title,phone_number,org_unit_code,role_slugs", exported_csv)
         audit_log = AuditLog.objects.get(action="exported", target_model="User")
         self.assertEqual(audit_log.actor, self.manager_user)
-        self.assertEqual(audit_log.changes, {"record_count": 2})
+        self.assertEqual(audit_log.changes, {"record_count": 4})
         self.assertEqual(audit_log.metadata["method"], "GET")
         self.assertEqual(audit_log.metadata["path"], reverse("user-export-users"))
 
@@ -738,8 +750,7 @@ class RBACAccessTests(APITestCase):
         response = self.client.get(reverse("user-export-users"))
 
         exported_rows = response.content.decode("utf-8").splitlines()
-        self.assertEqual(exported_rows[1].split(",")[0], "manager")
-        self.assertEqual(exported_rows[2].split(",")[0], "ops-staff")
+        self.assertEqual([row.split(",")[0] for row in exported_rows[1:]], ["child-staff", "enterprise-staff", "manager", "ops-staff"])
 
     def test_user_export_escapes_spreadsheet_formula_cells(self):
         self.same_org_staff.first_name = "=cmd"
