@@ -521,7 +521,25 @@ class RBACAccessTests(APITestCase):
         self.assertFalse(User.objects.filter(email="bad-admin@example.com").exists())
         self.assertFalse(User.objects.filter(email="finance-import@example.com").exists())
         self.assertIn("Managers cannot import admin users.", str(response.data))
-        self.assertIn("Managers can only import users into their own organization unit.", str(response.data))
+        self.assertIn("Managers can only import users into their own organization branch.", str(response.data))
+
+    def test_manager_csv_import_can_create_users_in_descendant_branch(self):
+        self.client.force_authenticate(user=self.manager_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "branch-import,branch-import@example.com,Branch,Import,Analyst,ENT,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        imported_user = User.objects.get(email="branch-import@example.com")
+        self.assertEqual(imported_user.org_unit, self.enterprise_support)
+        self.assertEqual(imported_user.role_slugs, ["staff"])
 
     def test_admin_csv_import_reports_unknown_role_without_writing_rows(self):
         self.client.force_authenticate(user=self.admin_user)

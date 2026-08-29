@@ -189,6 +189,7 @@ class UserViewSet(viewsets.ModelViewSet):
         seen_emails = {}
         operator = self.request.user
         manager_mode = not operator.is_admin_role()
+        manager_branch_ids = set(organization_branch_ids(operator.org_unit_id)) if manager_mode and operator.org_unit_id else set()
 
         for row_number, row in enumerate(rows, start=2):
             username = (row.get("username") or "").strip()
@@ -253,8 +254,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     errors.append({"row": row_number, "field": "role_slugs", "detail": "Managers cannot import admin users."})
                 if not operator.org_unit_id:
                     errors.append({"row": row_number, "field": "org_unit_code", "detail": "Manager must belong to an organization unit."})
-                elif not org_unit or org_unit.id != operator.org_unit_id:
-                    errors.append({"row": row_number, "field": "org_unit_code", "detail": "Managers can only import users into their own organization unit."})
+                elif not org_unit or org_unit.id not in manager_branch_ids:
+                    errors.append({"row": row_number, "field": "org_unit_code", "detail": "Managers can only import users into their own organization branch."})
 
             prepared_rows.append(
                 {
