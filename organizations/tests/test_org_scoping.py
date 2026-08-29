@@ -301,6 +301,22 @@ class OrganizationScopingTests(APITestCase):
         self.assertFalse(OrganizationUnit.objects.filter(code__in=["FINOPS", "ROOTATTEMPT"]).exists())
         self.assertIn("Managers can only import child organization units", str(response.data))
 
+    def test_manager_org_csv_import_can_create_units_under_descendant_branch(self):
+        self.client.force_authenticate(user=self.manager_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code\n"
+                "Enterprise Escalations,ENTESC,ENT\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(OrganizationUnit.objects.get(code="ENTESC").parent, self.enterprise_support)
+
     def test_org_csv_import_links_parent_created_in_same_file(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(

@@ -155,7 +155,9 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
         prepared_rows = []
         operator = self.request.user
         manager_mode = not operator.is_admin_role()
-        operator_org_code = operator.org_unit.code.upper() if manager_mode and operator.org_unit_id else ""
+        manager_branch_codes = set(
+            OrganizationUnit.objects.filter(id__in=organization_branch_ids(operator.org_unit_id)).values_list("code", flat=True)
+        ) if manager_mode and operator.org_unit_id else set()
         seen_codes = {}
         existing_units = {unit.code.upper(): unit for unit in OrganizationUnit.objects.all()}
         incoming_codes = {(row.get("code") or "").strip().upper() for row in rows if (row.get("code") or "").strip()}
@@ -186,14 +188,14 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
                 elif not manager.is_active or not manager.is_manager_role():
                     errors.append({"row": row_number, "field": "manager_username", "detail": "Manager must be an active admin or manager user."})
             if manager_mode:
-                if not operator_org_code:
+                if not operator.org_unit_id:
                     errors.append({"row": row_number, "field": "parent_code", "detail": "Manager must belong to an organization unit."})
-                elif parent_code != operator_org_code:
+                elif parent_code not in manager_branch_codes:
                     errors.append(
                         {
                             "row": row_number,
                             "field": "parent_code",
-                            "detail": "Managers can only import child organization units under their own organization unit.",
+                            "detail": "Managers can only import child organization units under their own organization branch.",
                         }
                     )
 
