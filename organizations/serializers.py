@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import OrganizationUnit
+from .scoping import organization_branch_ids
 
 
 class OrganizationUnitSerializer(serializers.ModelSerializer):
@@ -39,8 +40,8 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
         parent = attrs.get("parent", getattr(self.instance, "parent", None))
         if not operator.org_unit_id:
             raise serializers.ValidationError("Managers must belong to an organization unit before managing org units.")
-        if not parent or parent.id != operator.org_unit_id:
-            raise serializers.ValidationError("Managers can only manage child organization units under their own organization unit.")
+        if not parent or parent.id not in organization_branch_ids(operator.org_unit_id):
+            raise serializers.ValidationError("Managers can only manage child organization units under their own organization branch.")
         return attrs
 
     def validate_code(self, value: str) -> str:

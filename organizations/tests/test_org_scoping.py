@@ -138,7 +138,19 @@ class OrganizationScopingTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(OrganizationUnit.objects.filter(code="FINOPS").exists())
-        self.assertIn("under their own organization unit", str(response.data))
+        self.assertIn("under their own organization branch", str(response.data))
+
+    def test_manager_can_create_org_unit_under_descendant_branch(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "Enterprise Tier Two", "code": "ENT2", "parent": self.enterprise_support.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(OrganizationUnit.objects.get(code="ENT2").parent, self.enterprise_support)
 
     def test_org_unit_create_normalizes_code_and_rejects_case_insensitive_duplicates(self):
         self.client.force_authenticate(user=self.admin_user)
