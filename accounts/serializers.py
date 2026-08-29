@@ -1,6 +1,8 @@
 from django.contrib.auth.models import Permission
 from rest_framework import serializers
 
+from organizations.scoping import organization_branch_ids
+
 from .models import Role, User
 
 
@@ -156,7 +158,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Managers must belong to an organization unit before managing users.")
         if target_org_unit is None:
             raise serializers.ValidationError("Managers can only manage users assigned to their organization unit.")
-        if target_org_unit.id != operator.org_unit_id:
-            raise serializers.ValidationError("Managers can only manage users inside their own organization unit.")
+        if target_org_unit.id not in organization_branch_ids(operator.org_unit_id):
+            raise serializers.ValidationError("Managers can only manage users inside their own organization branch.")
 
         return attrs

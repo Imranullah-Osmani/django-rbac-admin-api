@@ -189,7 +189,28 @@ class RBACAccessTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Managers can only manage users inside their own organization unit.", str(response.data))
+        self.assertIn("Managers can only manage users inside their own organization branch.", str(response.data))
+
+    def test_manager_can_create_user_in_descendant_org_unit(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.post(
+            reverse("user-list"),
+            {
+                "username": "branch-hire",
+                "email": "branch-hire@example.com",
+                "first_name": "Branch",
+                "last_name": "Hire",
+                "title": "Support Analyst",
+                "org_unit": self.enterprise_support.id,
+                "role_ids": [self.staff_role.id],
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(User.objects.get(username="branch-hire").org_unit, self.enterprise_support)
 
     def test_user_create_normalizes_email_and_rejects_case_insensitive_duplicates(self):
         self.client.force_authenticate(user=self.admin_user)
