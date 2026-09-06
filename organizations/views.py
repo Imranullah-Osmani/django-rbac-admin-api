@@ -190,6 +190,14 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
             if manager_mode:
                 if not operator.org_unit_id:
                     errors.append({"row": row_number, "field": "parent_code", "detail": "Manager must belong to an organization unit."})
+                elif code in existing_units and code not in manager_branch_codes:
+                    errors.append(
+                        {
+                            "row": row_number,
+                            "field": "code",
+                            "detail": "Managers can only import changes for organization units inside their own branch.",
+                        }
+                    )
                 elif parent_code not in manager_branch_codes:
                     errors.append(
                         {

@@ -317,6 +317,25 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(OrganizationUnit.objects.get(code="ENTESC").parent, self.enterprise_support)
 
+    def test_manager_org_csv_import_cannot_update_units_outside_own_branch(self):
+        self.client.force_authenticate(user=self.manager_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code\n"
+                "Finance Renamed,FIN,OPS\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.finance.refresh_from_db()
+        self.assertEqual(self.finance.name, "Finance")
+        self.assertIsNone(self.finance.parent)
+        self.assertIn("Managers can only import changes for organization units inside their own branch.", str(response.data))
+
     def test_org_csv_import_links_parent_created_in_same_file(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(
