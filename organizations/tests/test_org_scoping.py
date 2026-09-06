@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 from accounts.models import Role
 from config.bootstrap import ensure_system_roles
 from organizations.models import OrganizationUnit
+from organizations.scoping import organization_branch_ids
 
 
 User = get_user_model()
@@ -65,6 +66,9 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         visible_codes = {item["code"] for item in response.data["results"]}
         self.assertEqual(visible_codes, {"OPS", "CS", "ENT"})
+
+    def test_empty_org_scope_does_not_resolve_root_units(self):
+        self.assertEqual(organization_branch_ids(None), [])
 
     def test_admin_can_search_org_units_by_manager_identity(self):
         self.customer_success.manager = self.manager_user

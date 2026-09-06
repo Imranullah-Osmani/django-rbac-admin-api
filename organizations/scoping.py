@@ -2,6 +2,9 @@ from .models import OrganizationUnit
 
 
 def organization_branch_ids(root_id) -> list[int]:
+    if root_id is None:
+        return []
+
     branch_ids = [root_id]
     frontier = [root_id]
 
