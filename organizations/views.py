@@ -187,6 +187,8 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
                     errors.append({"row": row_number, "field": "manager_username", "detail": f"Unknown manager username `{manager_username}`."})
                 elif not manager.is_active or not manager.is_manager_role():
                     errors.append({"row": row_number, "field": "manager_username", "detail": "Manager must be an active admin or manager user."})
+                elif manager_mode and manager.org_unit_id not in organization_branch_ids(operator.org_unit_id):
+                    errors.append({"row": row_number, "field": "manager_username", "detail": "Managers can only import organization managers from their own branch."})
             if manager_mode:
                 if not operator.org_unit_id:
                     errors.append({"row": row_number, "field": "parent_code", "detail": "Manager must belong to an organization unit."})

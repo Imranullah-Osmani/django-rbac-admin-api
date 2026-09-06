@@ -399,6 +399,24 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(unit.manager, self.manager_user)
 
+    def test_manager_org_csv_import_cannot_assign_manager_outside_own_branch(self):
+        finance_manager = self.create_user("finance-import-manager", "finance-import-manager@example.com", [self.manager_role], org_unit=self.finance)
+        self.client.force_authenticate(user=self.manager_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            (
+                "name,code,parent_code,manager_username\n"
+                f"Managed Escalation,MESC,ENT,{finance_manager.username}\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(OrganizationUnit.objects.filter(code="MESC").exists())
+        self.assertIn("Managers can only import organization managers from their own branch.", str(response.data))
+
     def test_org_csv_import_rejects_inactive_manager_username(self):
         self.manager_user.is_active = False
         self.manager_user.save(update_fields=["is_active"])
