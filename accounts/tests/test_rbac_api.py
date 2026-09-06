@@ -212,6 +212,39 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.get(username="branch-hire").org_unit, self.enterprise_support)
 
+    def test_manager_cannot_update_admin_account_in_own_branch(self):
+        branch_admin = self.create_user(
+            username="branch-admin",
+            email="branch-admin@example.com",
+            password="ChangeMe123!",
+            org_unit=self.operations,
+            roles=[self.admin_role],
+        )
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.patch(reverse("user-detail", args=[branch_admin.id]), {"title": "Changed"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        branch_admin.refresh_from_db()
+        self.assertEqual(branch_admin.title, "")
+        self.assertIn("Managers cannot manage admin user accounts.", str(response.data))
+
+    def test_manager_cannot_delete_admin_account_in_own_branch(self):
+        branch_admin = self.create_user(
+            username="branch-admin-delete",
+            email="branch-admin-delete@example.com",
+            password="ChangeMe123!",
+            org_unit=self.operations,
+            roles=[self.admin_role],
+        )
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.delete(reverse("user-detail", args=[branch_admin.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(User.objects.filter(id=branch_admin.id).exists())
+        self.assertIn("Managers cannot manage admin user accounts.", str(response.data))
+
     def test_user_create_normalizes_email_and_rejects_case_insensitive_duplicates(self):
         self.client.force_authenticate(user=self.admin_user)
 

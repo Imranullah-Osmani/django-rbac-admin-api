@@ -150,6 +150,9 @@ class UserSerializer(serializers.ModelSerializer):
         if operator.is_admin_role():
             return attrs
 
+        if self.instance and self.instance.has_role("admin"):
+            raise serializers.ValidationError("Managers cannot manage admin user accounts.")
+
         if roles and any(role.slug == "admin" for role in roles):
             raise serializers.ValidationError("Managers cannot assign the admin role.")
 

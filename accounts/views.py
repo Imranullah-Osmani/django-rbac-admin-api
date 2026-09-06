@@ -86,6 +86,11 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"detail": "Operators cannot delete their own user account."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if not request.user.is_admin_role() and instance.has_role("admin"):
+            return Response(
+                {"detail": "Managers cannot manage admin user accounts."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if (
             instance.has_role("admin")
             and not User.objects.filter(roles__slug="admin", roles__is_system=True, is_active=True).exclude(pk=instance.pk).exists()
