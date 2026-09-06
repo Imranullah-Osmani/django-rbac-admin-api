@@ -619,6 +619,23 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(self.other_org_staff.org_unit, self.finance)
         self.assertIn("Managers cannot import changes for users outside their own organization branch.", str(response.data))
 
+    def test_csv_import_defaults_blank_roles_to_staff(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "blank-role,blank-role@example.com,Blank,Role,Analyst,OPS,\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        imported_user = User.objects.get(email="blank-role@example.com")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(imported_user.role_slugs, ["staff"])
+
     def test_admin_csv_import_reports_unknown_role_without_writing_rows(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(

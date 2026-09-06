@@ -195,6 +195,7 @@ class UserViewSet(viewsets.ModelViewSet):
         operator = self.request.user
         manager_mode = not operator.is_admin_role()
         manager_branch_ids = set(organization_branch_ids(operator.org_unit_id)) if manager_mode and operator.org_unit_id else set()
+        default_staff_role = Role.objects.filter(slug="staff", is_system=True).first()
 
         for row_number, row in enumerate(rows, start=2):
             username = (row.get("username") or "").strip()
@@ -255,6 +256,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     errors.append({"row": row_number, "field": "org_unit_code", "detail": f"Unknown organization unit `{org_code}`."})
 
             roles = list(Role.objects.filter(slug__in=role_slugs, is_system=True))
+            if not role_slugs and default_staff_role:
+                roles = [default_staff_role]
             found_role_slugs = {role.slug for role in roles}
             missing_role_slugs = sorted(set(role_slugs) - found_role_slugs)
             if missing_role_slugs:
