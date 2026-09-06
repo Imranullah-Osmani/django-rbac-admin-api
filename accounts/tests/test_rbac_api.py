@@ -574,6 +574,32 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(imported_user.org_unit, self.enterprise_support)
         self.assertEqual(imported_user.role_slugs, ["staff"])
 
+    def test_manager_csv_import_cannot_update_existing_admin_account(self):
+        branch_admin = self.create_user(
+            username="branch-admin-import",
+            email="branch-admin-import@example.com",
+            password="ChangeMe123!",
+            org_unit=self.operations,
+            roles=[self.admin_role],
+        )
+        self.client.force_authenticate(user=self.manager_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "branch-admin-import,branch-admin-import@example.com,Branch,Admin,Changed,OPS,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        branch_admin.refresh_from_db()
+        self.assertEqual(branch_admin.title, "")
+        self.assertEqual(branch_admin.role_slugs, ["admin"])
+        self.assertIn("Managers cannot import changes for admin user accounts.", str(response.data))
+
     def test_admin_csv_import_reports_unknown_role_without_writing_rows(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(

@@ -241,6 +241,10 @@ class UserViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     seen_emails[email] = row_number
+                if manager_mode:
+                    existing_user = User.objects.filter(email__iexact=email).first()
+                    if existing_user and existing_user.has_role("admin"):
+                        errors.append({"row": row_number, "field": "email", "detail": "Managers cannot import changes for admin user accounts."})
 
             org_unit = None
             if org_code:
