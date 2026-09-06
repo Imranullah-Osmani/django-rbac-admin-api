@@ -600,6 +600,25 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(branch_admin.role_slugs, ["admin"])
         self.assertIn("Managers cannot import changes for admin user accounts.", str(response.data))
 
+    def test_manager_csv_import_cannot_update_existing_user_outside_branch(self):
+        self.client.force_authenticate(user=self.manager_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            (
+                "username,email,first_name,last_name,title,org_unit_code,role_slugs\n"
+                "finance-staff,finance-staff@example.com,Finance,Staff,Changed,OPS,staff\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.other_org_staff.refresh_from_db()
+        self.assertEqual(self.other_org_staff.title, "")
+        self.assertEqual(self.other_org_staff.org_unit, self.finance)
+        self.assertIn("Managers cannot import changes for users outside their own organization branch.", str(response.data))
+
     def test_admin_csv_import_reports_unknown_role_without_writing_rows(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(

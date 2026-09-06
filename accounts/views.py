@@ -245,6 +245,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     existing_user = User.objects.filter(email__iexact=email).first()
                     if existing_user and existing_user.has_role("admin"):
                         errors.append({"row": row_number, "field": "email", "detail": "Managers cannot import changes for admin user accounts."})
+                    if existing_user and existing_user.org_unit_id not in manager_branch_ids:
+                        errors.append({"row": row_number, "field": "email", "detail": "Managers cannot import changes for users outside their own organization branch."})
 
             org_unit = None
             if org_code:
