@@ -198,6 +198,20 @@ class OrganizationScopingTests(APITestCase):
         self.assertFalse(OrganizationUnit.objects.filter(code="BADMGR").exists())
         self.assertIn("Organization managers must be active admin or manager users.", str(response.data))
 
+    def test_manager_cannot_assign_org_manager_outside_own_branch(self):
+        finance_manager = self.create_user("finance-manager", "finance-manager@example.com", [self.manager_role], org_unit=self.finance)
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.post(
+            reverse("org-unit-list"),
+            {"name": "Escalation Desk", "code": "ESC", "parent": self.enterprise_support.id, "manager": finance_manager.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(OrganizationUnit.objects.filter(code="ESC").exists())
+        self.assertIn("Managers can only assign organization managers from their own branch.", str(response.data))
+
     def test_org_unit_create_rejects_blank_name_after_normalization(self):
         self.client.force_authenticate(user=self.admin_user)
 

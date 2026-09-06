@@ -64,6 +64,14 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
             return manager
         if not manager.is_active or not manager.is_manager_role():
             raise serializers.ValidationError("Organization managers must be active admin or manager users.")
+        request = self.context.get("request")
+        if (
+            request
+            and request.user.is_authenticated
+            and not request.user.is_admin_role()
+            and (not manager.org_unit_id or manager.org_unit_id not in organization_branch_ids(request.user.org_unit_id))
+        ):
+            raise serializers.ValidationError("Managers can only assign organization managers from their own branch.")
         return manager
 
     def validate_parent(self, parent: OrganizationUnit | None) -> OrganizationUnit | None:
