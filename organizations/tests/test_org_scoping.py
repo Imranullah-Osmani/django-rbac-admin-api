@@ -80,6 +80,16 @@ class OrganizationScopingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([item["code"] for item in response.data["results"]], ["CS"])
 
+    def test_org_unit_manager_name_falls_back_to_username(self):
+        self.customer_success.manager = self.manager_user
+        self.customer_success.save(update_fields=["manager", "updated_at"])
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.get(reverse("org-unit-detail", args=[self.customer_success.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["manager_name"], "manager")
+
     def test_tree_action_returns_only_scoped_branch_for_manager(self):
         self.client.force_authenticate(user=self.manager_user)
 

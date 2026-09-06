@@ -29,7 +29,9 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
         return [{"id": child.id, "name": child.name, "code": child.code} for child in obj.children.all()]
 
     def get_manager_name(self, obj: OrganizationUnit) -> str:
-        return obj.manager.get_full_name() if obj.manager else ""
+        if not obj.manager:
+            return ""
+        return obj.manager.get_full_name() or obj.manager.username
 
     def validate(self, attrs):
         request = self.context.get("request")
