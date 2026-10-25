@@ -45,6 +45,7 @@ The script validates Docker Compose configuration, Django system checks, migrati
 - Manage Django staff/admin-console access outside the public user API; user create and update payloads cannot set the `is_staff` flag.
 - Keep Dependabot alerts and GitHub Actions failures visible and triaged.
 - Review audit logs around bulk import/export workflows because those paths can change many records quickly.
+- Audit source addresses use validated `REMOTE_ADDR`; untrusted `X-Forwarded-For` headers cannot override them. Deployments behind a proxy should normalize the source address through their trusted ingress configuration.
 - CSV exports escape spreadsheet-formula prefixes before writing operator-controlled text fields.
 - CSV imports reject files larger than 1 MB before reading rows into memory.
 - CSV imports reject files with more than 500 data rows before preparing bulk changes.

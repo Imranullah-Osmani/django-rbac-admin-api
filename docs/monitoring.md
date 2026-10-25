@@ -24,7 +24,7 @@ This gives a reviewer a quick way to see whether the control plane is actually r
 - metrics for auth failures, user writes, imports, exports, and audit log volume
 - alerting on readiness failures and elevated 5xx responses
 - background-job tracking for larger CSV imports
+
 ## Hierarchy Integrity
 
 Branch traversal visits each organization at most once, so legacy cycles cannot trap scoped requests in an infinite loop. Reparenting into a cyclic chain returns HTTP 400. Repair corrupt parent links through a reviewed database correction before attempting further reparenting.
-
