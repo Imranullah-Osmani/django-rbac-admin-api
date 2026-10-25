@@ -657,6 +657,74 @@ class RBACAccessTests(APITestCase):
         self.assertEqual(self.other_org_staff.org_unit, self.finance)
         self.assertIn("Managers cannot import changes for users outside their own organization branch.", str(response.data))
 
+    def test_csv_import_cannot_demote_all_active_admins(self):
+        second_admin = self.create_user(
+            "second-admin", "second-admin@example.com", "ChangeMe123!", [self.admin_role],
+        )
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            b"username,email,role_slugs\nadmin,admin@example.com,staff\nsecond-admin,second-admin@example.com,staff\nnew-user,new-user@example.com,staff\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.assertTrue(self.admin_user.has_role("admin"))
+        self.assertTrue(second_admin.has_role("admin"))
+        self.assertFalse(User.objects.filter(email="new-user@example.com").exists())
+
+    def test_csv_import_inactive_admin_does_not_prevent_admin_lockout(self):
+        inactive_admin = self.create_user(
+            "inactive-import-admin", "inactive-import-admin@example.com", "ChangeMe123!", [self.admin_role],
+        )
+        inactive_admin.is_active = False
+        inactive_admin.save(update_fields=["is_active"])
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv", b"username,email,role_slugs\nadmin,admin@example.com,\n", content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(self.admin_user.has_role("admin"))
+
+    def test_csv_import_can_transfer_admin_role_in_same_batch(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            b"username,email,role_slugs\nadmin,admin@example.com,staff\nnew-admin,new-admin@example.com,admin\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(self.admin_user.has_role("admin"))
+        self.assertTrue(User.objects.get(email="new-admin@example.com").has_role("admin"))
+
+    def test_csv_import_cannot_transfer_admin_access_to_inactive_mixed_case_account(self):
+        inactive_user = self.create_user(
+            "inactive-transfer", "Inactive.Transfer@Example.COM", "ChangeMe123!", [self.staff_role],
+        )
+        inactive_user.is_active = False
+        inactive_user.save(update_fields=["is_active"])
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "users.csv",
+            b"username,email,role_slugs\nadmin,admin@example.com,staff\ninactive-transfer,inactive.transfer@example.com,admin\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(self.admin_user.has_role("admin"))
+        self.assertFalse(inactive_user.has_role("admin"))
+
     def test_csv_import_defaults_blank_roles_to_staff(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(

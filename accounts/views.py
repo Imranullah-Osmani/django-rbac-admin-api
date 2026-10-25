@@ -4,6 +4,8 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
+from django.db.models import Q
+from django.db.models.functions import Lower
 from django.http import HttpResponse
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -283,6 +285,30 @@ class UserViewSet(viewsets.ModelViewSet):
                     "roles": roles,
                 }
             )
+
+        active_admin_emails = set(
+            User.objects.filter(is_active=True)
+            .filter(Q(is_superuser=True) | Q(roles__slug="admin", roles__is_system=True))
+            .values_list("email", flat=True)
+        )
+        active_admin_emails = {email.lower() for email in active_admin_emails}
+        had_active_admin = bool(active_admin_emails)
+        existing_users = {
+            user.email.lower(): user
+            for user in User.objects.annotate(normalized_email=Lower("email")).filter(normalized_email__in=seen_emails)
+        }
+        # Evaluate the whole batch so an admin transfer can be accepted safely.
+        for prepared in prepared_rows:
+            email = prepared["email"]
+            existing = existing_users.get(email)
+            if existing and existing.is_active and existing.is_superuser:
+                continue
+            if (existing is None or existing.is_active) and any(role.slug == "admin" for role in prepared["roles"]):
+                active_admin_emails.add(email)
+            else:
+                active_admin_emails.discard(email)
+        if had_active_admin and not active_admin_emails:
+            errors.append({"field": "role_slugs", "detail": "At least one active admin user must retain admin access after import."})
 
         return errors, prepared_rows
 
