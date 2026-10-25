@@ -70,6 +70,27 @@ class OrganizationScopingTests(APITestCase):
     def test_empty_org_scope_does_not_resolve_root_units(self):
         self.assertEqual(organization_branch_ids(None), [])
 
+    def test_branch_scoping_terminates_on_legacy_parent_cycle(self):
+        OrganizationUnit.objects.filter(pk=self.operations.pk).update(parent=self.enterprise_support)
+
+        branch = organization_branch_ids(self.operations.pk)
+
+        self.assertCountEqual(branch, [self.operations.pk, self.customer_success.pk, self.enterprise_support.pk])
+        self.assertEqual(len(branch), len(set(branch)))
+
+    def test_reparenting_rejects_legacy_cycle_without_hanging(self):
+        OrganizationUnit.objects.filter(pk=self.operations.pk).update(parent=self.enterprise_support)
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.patch(
+            reverse("org-unit-detail", args=[self.finance.pk]), {"parent": self.operations.pk}, format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("contains a cycle", str(response.data))
+        self.finance.refresh_from_db()
+        self.assertIsNone(self.finance.parent)
+
     def test_admin_can_search_org_units_by_manager_identity(self):
         self.customer_success.manager = self.manager_user
         self.customer_success.save(update_fields=["manager", "updated_at"])

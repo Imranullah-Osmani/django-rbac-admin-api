@@ -84,9 +84,13 @@ class OrganizationUnitSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An organization unit cannot be its own parent.")
 
         current = parent
+        visited = set()
         while current is not None:
             if current.id == self.instance.id:
                 raise serializers.ValidationError("An organization unit cannot use one of its descendants as parent.")
+            if current.id in visited:
+                raise serializers.ValidationError("The selected parent hierarchy contains a cycle. Repair it before reparenting.")
+            visited.add(current.id)
             current = current.parent
 
         return parent
