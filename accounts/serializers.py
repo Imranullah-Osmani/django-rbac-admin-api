@@ -126,7 +126,6 @@ class UserSerializer(serializers.ModelSerializer):
             return attrs
 
         roles = attrs.get("roles")
-        org_unit = attrs.get("org_unit")
         operator = request.user
 
         if self.instance and self.instance.pk == operator.pk and attrs.get("is_active") is False:
@@ -156,7 +155,7 @@ class UserSerializer(serializers.ModelSerializer):
         if roles and any(role.slug == "admin" for role in roles):
             raise serializers.ValidationError("Managers cannot assign the admin role.")
 
-        target_org_unit = org_unit if org_unit is not None else getattr(self.instance, "org_unit", None)
+        target_org_unit = attrs.get("org_unit", getattr(self.instance, "org_unit", None))
         if not operator.org_unit_id:
             raise serializers.ValidationError("Managers must belong to an organization unit before managing users.")
         if target_org_unit is None:

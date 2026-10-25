@@ -147,6 +147,44 @@ class RBACAccessTests(APITestCase):
         self.assertEqual([item["username"] for item in phone_response.data["results"]], ["ops-staff"])
         self.assertIn("ops-staff", {item["username"] for item in org_response.data["results"]})
 
+    def test_manager_cannot_clear_user_organization(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.patch(
+            reverse("user-detail", args=[self.child_org_staff.id]),
+            {"org_unit": None},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.child_org_staff.refresh_from_db()
+        self.assertEqual(self.child_org_staff.org_unit, self.customer_success)
+
+    def test_manager_can_update_user_without_resubmitting_organization(self):
+        self.client.force_authenticate(user=self.manager_user)
+
+        response = self.client.patch(
+            reverse("user-detail", args=[self.child_org_staff.id]),
+            {"title": "Support Lead"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.child_org_staff.refresh_from_db()
+        self.assertEqual(self.child_org_staff.title, "Support Lead")
+        self.assertEqual(self.child_org_staff.org_unit, self.customer_success)
+
+    def test_admin_can_clear_user_organization(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(
+            reverse("user-detail", args=[self.child_org_staff.id]),
+            {"org_unit": None},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.child_org_staff.refresh_from_db()
+        self.assertIsNone(self.child_org_staff.org_unit)
+
     def test_manager_cannot_assign_admin_role(self):
         self.client.force_authenticate(user=self.manager_user)
 

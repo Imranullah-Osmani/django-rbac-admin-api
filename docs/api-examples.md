@@ -26,7 +26,7 @@ curl -s http://localhost:8010/api/users/ \
   -H "Authorization: Bearer <access-token>"
 ```
 
-Admins see all users. Managers see only users in their own organization unit.
+Admins see all users. Managers see users in their organization branch, including descendant units. Manager updates must keep users in that branch: omitting `org_unit` preserves it, while explicitly setting it to `null` returns HTTP 400. Admins can clear a user's organization.
 
 ## 4. Export users to CSV
 
