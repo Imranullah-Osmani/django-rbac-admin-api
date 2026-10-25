@@ -47,3 +47,24 @@ class CSVImportContractTests(APITestCase):
         self.assertEqual(unit_response.status_code, 200)
         self.assertEqual(User.objects.get(username="multiline").title, "Line one\nLine two")
         self.assertEqual(OrganizationUnit.objects.get(code="CS").name, "Customer\nSupport")
+
+    def test_user_import_validates_model_fields_before_any_write(self):
+        for field, invalid in (
+            ("username", "invalid username"), ("username", "x" * 151),
+            ("title", "x" * 121), ("phone_number", "x" * 31),
+            ("first_name", "x" * 151), ("last_name", "x" * 151),
+        ):
+            with self.subTest(field=field, invalid=invalid):
+                header = ["username", "email"] + ([] if field == "username" else [field])
+                valid = ["valid-user", "valid-user@example.com"] + ([] if field == "username" else ["valid"])
+                bad = [invalid if field == "username" else "invalid-user", "invalid-user@example.com"]
+                if field != "username":
+                    bad.append(invalid)
+                content = "\n".join(",".join(row) for row in (header, valid, bad)) + "\n"
+
+                response = self.upload("user-import-users", content)
+
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.data["processed"], 0)
+                self.assertTrue(any(error["field"] == field for error in response.data["errors"]))
+                self.assertEqual(User.objects.count(), 1)

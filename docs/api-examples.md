@@ -54,6 +54,8 @@ Expected CSV shape:
 
 User imports reject the entire batch with HTTP 400 if its final role assignments would remove the last active administrator. Transferring admin access to another active or newly created account in the same upload is allowed; inactive accounts do not satisfy this requirement.
 
+User CSV fields use the same model validators and length limits as the regular API. Invalid usernames or oversized profile fields produce row/field errors and reject the whole upload before writing data.
+
 ```csv
 username,email,first_name,last_name,title,phone_number,org_unit_code,role_slugs
 ops.manager,ops.manager@example.com,Ops,Manager,Operations Lead,+1-555-0101,OPS,manager

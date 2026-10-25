@@ -11,6 +11,8 @@ def csv_import_has_too_many_rows(rows, max_rows: int = MAX_CSV_IMPORT_ROWS) -> b
 import csv
 import io
 
+from django.core.exceptions import ValidationError
+
 
 
 
@@ -38,3 +40,13 @@ def read_csv_upload(upload, required_headers: set[str]) -> list[dict[str, str]]:
         return rows
     except csv.Error as exc:
         raise ValueError("Upload must contain well-formed CSV data.") from exc
+
+
+def validate_import_fields(model, values: dict[str, str], row_number: int) -> list[dict]:
+    errors = []
+    for name, value in values.items():
+        try:
+            model._meta.get_field(name).clean(value, None)
+        except ValidationError as exc:
+            errors.append({"row": row_number, "field": name, "detail": " ".join(exc.messages)})
+    return errors

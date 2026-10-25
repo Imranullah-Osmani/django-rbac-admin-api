@@ -15,7 +15,7 @@ from rest_framework.response import Response
 
 from audits.utils import create_audit_log
 from config.csv_export import safe_csv_row
-from config.csv_import import csv_import_too_large, read_csv_upload
+from config.csv_import import csv_import_too_large, read_csv_upload, validate_import_fields
 from organizations.models import OrganizationUnit
 from organizations.scoping import organization_branch_ids
 
@@ -189,6 +189,11 @@ class UserViewSet(viewsets.ModelViewSet):
             email = (row.get("email") or "").strip().lower()
             org_code = (row.get("org_unit_code") or "").strip().upper()
             role_slugs = [slug.strip().lower() for slug in (row.get("role_slugs") or "").split(",") if slug.strip()]
+            profile_fields = {
+                field: (row.get(field) or "").strip()
+                for field in ("first_name", "last_name", "title", "phone_number")
+            }
+            errors.extend(validate_import_fields(User, {"username": username, "email": email, **profile_fields}, row_number))
 
             if not username:
                 errors.append({"row": row_number, "field": "username", "detail": "Username is required."})
@@ -262,10 +267,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 {
                     "username": username,
                     "email": email,
-                    "first_name": (row.get("first_name") or "").strip(),
-                    "last_name": (row.get("last_name") or "").strip(),
-                    "title": (row.get("title") or "").strip(),
-                    "phone_number": (row.get("phone_number") or "").strip(),
+                    **profile_fields,
                     "org_unit": org_unit,
                     "roles": roles,
                 }
