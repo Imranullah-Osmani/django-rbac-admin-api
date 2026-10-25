@@ -211,7 +211,13 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
 
             prepared_rows.append({"name": name, "code": code, "parent_code": parent_code, "manager": manager})
 
-        parent_by_code = {row["code"]: row["parent_code"] for row in prepared_rows if row["code"]}
+        code_by_id = {unit.id: code for code, unit in existing_units.items()}
+        parent_by_code = {
+            code: code_by_id.get(unit.parent_id, "")
+            for code, unit in existing_units.items()
+        }
+        # Validate the final hierarchy, including parents absent from the upload.
+        parent_by_code.update({row["code"]: row["parent_code"] for row in prepared_rows if row["code"]})
         for row_number, prepared in enumerate(prepared_rows, start=2):
             code = prepared["code"]
             seen = set()

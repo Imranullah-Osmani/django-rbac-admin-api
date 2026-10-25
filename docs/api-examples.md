@@ -56,6 +56,8 @@ support.staff,support.staff@example.com,Support,Staff,Support Specialist,+1-555-
 
 Organization import/export also supports manager ownership:
 
+Organization imports validate the final hierarchy against both uploaded rows and existing units. A parent cycle rejects the entire upload with HTTP 400 before any units are changed.
+
 ```csv
 name,code,parent_code,manager_username
 Support Operations,SUP,OPS,ops.manager

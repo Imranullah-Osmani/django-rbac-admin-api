@@ -258,6 +258,39 @@ class OrganizationScopingTests(APITestCase):
         self.assertFalse(OrganizationUnit.objects.filter(code__in=["RISK", "AUDIT"]).exists())
         self.assertIn("parent cycle", str(response.data))
 
+    def test_org_csv_import_rejects_cycle_through_existing_units(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            b"name,code,parent_code\nOperations Changed,OPS,ENT\nNew Team,NEW,FIN\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["processed"], 0)
+        self.operations.refresh_from_db()
+        self.assertIsNone(self.operations.parent)
+        self.assertEqual(self.operations.name, "Operations")
+        self.assertFalse(OrganizationUnit.objects.filter(code="NEW").exists())
+
+    def test_org_csv_import_allows_reparenting_when_batch_breaks_old_path(self):
+        self.client.force_authenticate(user=self.admin_user)
+        upload = SimpleUploadedFile(
+            "org-units.csv",
+            b"name,code,parent_code\nOperations,OPS,ENT\nCustomer Success,CS,FIN\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.post(reverse("org-unit-import-units"), {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.operations.refresh_from_db()
+        self.customer_success.refresh_from_db()
+        self.assertEqual(self.operations.parent, self.enterprise_support)
+        self.assertEqual(self.customer_success.parent, self.finance)
+
     def test_org_csv_import_rejects_duplicate_codes_inside_same_file(self):
         self.client.force_authenticate(user=self.admin_user)
         upload = SimpleUploadedFile(
