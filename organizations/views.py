@@ -11,7 +11,7 @@ from accounts.models import User
 from accounts.permissions import IsAdminOrManager
 from audits.utils import create_audit_log
 from config.csv_export import safe_csv_row
-from config.csv_import import csv_import_has_too_many_rows, csv_import_too_large
+from config.csv_import import csv_import_too_large, read_csv_upload
 
 from .models import OrganizationUnit
 from .scoping import organization_branch_ids
@@ -105,24 +105,9 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
             return Response({"detail": "CSV import files must be 1 MB or smaller."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            decoded_csv = upload.read().decode("utf-8-sig")
-        except UnicodeDecodeError:
-            return Response({"detail": "Upload must be a UTF-8 encoded CSV file."}, status=status.HTTP_400_BAD_REQUEST)
-
-        reader = csv.DictReader(decoded_csv.splitlines())
-        missing_headers = {"name", "code"} - set(reader.fieldnames or [])
-        if missing_headers:
-            return Response(
-                {"detail": f"Missing required CSV columns: {', '.join(sorted(missing_headers))}."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        rows = list(reader)
-        if csv_import_has_too_many_rows(rows):
-            return Response(
-                {"detail": "CSV import files can include at most 500 data rows."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            rows = read_csv_upload(upload, {"name", "code"})
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         errors, prepared_rows = self._prepare_org_import_rows(rows)
         if errors:
