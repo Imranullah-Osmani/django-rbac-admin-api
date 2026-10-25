@@ -141,6 +141,24 @@ class OrganizationScopingTests(APITestCase):
         self.assertTrue(OrganizationUnit.objects.filter(id=self.customer_success.id).exists())
         self.assertIn("cannot delete their own organization unit", str(response.data))
 
+    def test_org_unit_delete_preserves_assigned_members(self):
+        member = self.create_user("enterprise-member", "enterprise-member@example.com", [self.manager_role], self.enterprise_support)
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.delete(reverse("org-unit-detail", args=[self.enterprise_support.id]))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Move members", str(response.data))
+        member.refresh_from_db()
+        self.assertEqual(member.org_unit, self.enterprise_support)
+        self.assertTrue(OrganizationUnit.objects.filter(pk=self.enterprise_support.id).exists())
+
+    def test_admin_can_delete_empty_leaf_org_unit(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.delete(reverse("org-unit-detail", args=[self.enterprise_support.id]))
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(OrganizationUnit.objects.filter(pk=self.enterprise_support.id).exists())
+
     def test_manager_cannot_create_org_unit_outside_own_branch(self):
         self.client.force_authenticate(user=self.manager_user)
 

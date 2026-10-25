@@ -58,6 +58,11 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
                 {"detail": "Move or delete child organization units before deleting this unit."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if instance.members.exists():
+            return Response(
+                {"detail": "Move members to another organization unit before deleting this unit."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return super().destroy(request, *args, **kwargs)
 
     def perform_destroy(self, instance) -> None:

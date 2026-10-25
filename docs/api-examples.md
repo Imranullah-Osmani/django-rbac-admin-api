@@ -81,3 +81,5 @@ curl -s http://localhost:8010/api/org-units/tree/ \
 ```
 
 This endpoint is useful for showing organization hierarchy and manager-scoped visibility in one response. For managers assigned to a child organization, their own organization is returned as the branch root.
+
+Deleting an organization with child units or assigned members returns HTTP 400. Move members first to preserve their organization scope; empty leaf units can be deleted.
