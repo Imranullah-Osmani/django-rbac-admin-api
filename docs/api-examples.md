@@ -44,6 +44,8 @@ The export path writes an audit log with the visible record count.
 
 Both CSV import endpoints accept UTF-8 (with an optional BOM), preserve quoted multiline cells, and require unique non-empty headers and a consistent column count. Malformed quoting or rows return HTTP 400 before any records are written. Uploads are limited to 1 MB and 500 data rows.
 
+NUL characters are rejected with HTTP 400 before any write, avoiding data accepted by SQLite but rejected by PostgreSQL text fields.
+
 ```bash
 curl -s -X POST http://localhost:8010/api/users/import/ \
   -H "Authorization: Bearer <access-token>" \

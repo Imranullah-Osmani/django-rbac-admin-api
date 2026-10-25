@@ -48,6 +48,18 @@ class CSVImportContractTests(APITestCase):
         self.assertEqual(User.objects.get(username="multiline").title, "Line one\nLine two")
         self.assertEqual(OrganizationUnit.objects.get(code="CS").name, "Customer\nSupport")
 
+    def test_csv_rejects_nul_bytes_before_any_write(self):
+        for endpoint, content in (
+            ("user-import-users", "username,email,title\nnew-user,new-user@example.com,Support\x00Lead\n"),
+            ("org-unit-import-units", "name,code\nSupport\x00Team,SUP\n"),
+        ):
+            with self.subTest(endpoint=endpoint):
+                response = self.upload(endpoint, content)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("NUL", response.data["detail"])
+                self.assertEqual(User.objects.count(), 1)
+                self.assertEqual(OrganizationUnit.objects.count(), 0)
+
     def test_user_import_validates_model_fields_before_any_write(self):
         for field, invalid in (
             ("username", "invalid username"), ("username", "x" * 151),

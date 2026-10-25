@@ -1,3 +1,9 @@
+import csv
+import io
+
+from django.core.exceptions import ValidationError
+
+
 MAX_CSV_IMPORT_BYTES = 1024 * 1024
 MAX_CSV_IMPORT_ROWS = 500
 
@@ -8,19 +14,14 @@ def csv_import_too_large(upload, max_bytes: int = MAX_CSV_IMPORT_BYTES) -> bool:
 
 def csv_import_has_too_many_rows(rows, max_rows: int = MAX_CSV_IMPORT_ROWS) -> bool:
     return len(rows) > max_rows
-import csv
-import io
-
-from django.core.exceptions import ValidationError
-
-
-
 
 def read_csv_upload(upload, required_headers: set[str]) -> list[dict[str, str]]:
     try:
         content = upload.read().decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError("Upload must be a UTF-8 encoded CSV file.") from exc
+    if "\x00" in content:
+        raise ValueError("CSV files cannot contain NUL characters.")
 
     try:
         reader = csv.DictReader(io.StringIO(content, newline=""), strict=True)
