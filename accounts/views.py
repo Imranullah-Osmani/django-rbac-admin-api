@@ -88,7 +88,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"detail": "Operators cannot delete their own user account."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not request.user.is_admin_role() and instance.has_role("admin"):
+        if not request.user.is_admin_role() and instance.is_admin_role():
             return Response(
                 {"detail": "Managers cannot manage admin user accounts."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -246,7 +246,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     seen_emails[email] = row_number
                 if manager_mode:
                     existing_user = User.objects.filter(email__iexact=email).first()
-                    if existing_user and existing_user.has_role("admin"):
+                    if existing_user and existing_user.is_admin_role():
                         errors.append({"row": row_number, "field": "email", "detail": "Managers cannot import changes for admin user accounts."})
                     if existing_user and existing_user.org_unit_id not in manager_branch_ids:
                         errors.append({"row": row_number, "field": "email", "detail": "Managers cannot import changes for users outside their own organization branch."})

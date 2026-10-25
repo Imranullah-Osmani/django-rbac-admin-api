@@ -185,6 +185,29 @@ class RBACAccessTests(APITestCase):
         self.child_org_staff.refresh_from_db()
         self.assertIsNone(self.child_org_staff.org_unit)
 
+    def test_manager_cannot_mutate_superuser_without_admin_role(self):
+        self.same_org_staff.is_superuser = True
+        self.same_org_staff.save(update_fields=["is_superuser"])
+        self.client.force_authenticate(user=self.manager_user)
+
+        patch_response = self.client.patch(
+            reverse("user-detail", args=[self.same_org_staff.id]),
+            {"email": "changed-superuser@example.com", "is_active": False}, format="json",
+        )
+        delete_response = self.client.delete(reverse("user-detail", args=[self.same_org_staff.id]))
+        upload = SimpleUploadedFile(
+            "users.csv", b"username,email,org_unit_code,role_slugs\nops-staff,ops-staff@example.com,OPS,staff\n",
+            content_type="text/csv",
+        )
+        import_response = self.client.post(reverse("user-import-users"), {"file": upload}, format="multipart")
+
+        for response in (patch_response, delete_response, import_response):
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.same_org_staff.refresh_from_db()
+        self.assertEqual(self.same_org_staff.email, "ops-staff@example.com")
+        self.assertTrue(self.same_org_staff.is_active)
+        self.assertTrue(self.same_org_staff.is_superuser)
+
     def test_manager_cannot_assign_admin_role(self):
         self.client.force_authenticate(user=self.manager_user)
 

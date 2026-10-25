@@ -28,6 +28,8 @@ curl -s http://localhost:8010/api/users/ \
 
 Admins see all users. Managers see users in their organization branch, including descendant units. Manager updates must keep users in that branch: omitting `org_unit` preserves it, while explicitly setting it to `null` returns HTTP 400. Admins can clear a user's organization.
 
+Managers cannot edit, delete, or import changes to administrator accounts. This includes Django superusers even when they have no explicit admin role assigned.
+
 ## 4. Export users to CSV
 
 ```bash
