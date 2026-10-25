@@ -11,7 +11,7 @@ from accounts.models import User
 from accounts.permissions import IsAdminOrManager
 from audits.utils import create_audit_log
 from config.csv_export import safe_csv_row
-from config.csv_import import csv_import_too_large, read_csv_upload
+from config.csv_import import csv_import_too_large, read_csv_upload, validate_import_fields
 
 from .models import OrganizationUnit
 from .scoping import organization_branch_ids
@@ -153,6 +153,7 @@ class OrganizationUnitViewSet(viewsets.ModelViewSet):
             parent_code = (row.get("parent_code") or "").strip().upper()
             manager_username = (row.get("manager_username") or "").strip()
             manager = None
+            errors.extend(validate_import_fields(OrganizationUnit, {"name": name, "code": code}, row_number))
 
             if not name:
                 errors.append({"row": row_number, "field": "name", "detail": "Name is required."})

@@ -68,3 +68,15 @@ class CSVImportContractTests(APITestCase):
                 self.assertEqual(response.data["processed"], 0)
                 self.assertTrue(any(error["field"] == field for error in response.data["errors"]))
                 self.assertEqual(User.objects.count(), 1)
+
+    def test_org_import_validates_lengths_before_any_write(self):
+        for name, code, invalid_field in (("x" * 121, "INVALID", "name"), ("Invalid", "X" * 51, "code")):
+            with self.subTest(field=invalid_field):
+                response = self.upload(
+                    "org-unit-import-units", f"name,code\nValid,VALID\n{name},{code}\n",
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.data["processed"], 0)
+                self.assertTrue(any(error["field"] == invalid_field for error in response.data["errors"]))
+                self.assertEqual(OrganizationUnit.objects.count(), 0)

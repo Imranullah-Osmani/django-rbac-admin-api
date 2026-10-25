@@ -66,6 +66,8 @@ Organization import/export also supports manager ownership:
 
 Organization imports validate the final hierarchy against both uploaded rows and existing units. A parent cycle rejects the entire upload with HTTP 400 before any units are changed.
 
+Organization names are limited to 120 characters and codes to 50 characters after normalization. Violations return row/field errors and reject the entire upload, including otherwise valid rows.
+
 ```csv
 name,code,parent_code,manager_username
 Support Operations,SUP,OPS,ops.manager
